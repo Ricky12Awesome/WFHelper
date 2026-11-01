@@ -11,7 +11,9 @@ const EMPTY_XDG_CONFIG = path.join(os.tmpdir(), "wfh-policy-xdg");
 fs.writeFileSync(EMPTY_GIT_CONFIG, "");
 fs.mkdirSync(EMPTY_XDG_CONFIG, { recursive: true });
 const CLEAN_GIT_ENV = {
-  ...process.env,
+  // Hooks export the current checkout's Git paths. None may reach a temporary
+  // repository, or its test commits/config writes would target the real repo.
+  ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_"))),
   GIT_CONFIG_GLOBAL: EMPTY_GIT_CONFIG,
   GIT_CONFIG_NOSYSTEM: "1",
   XDG_CONFIG_HOME: EMPTY_XDG_CONFIG,
