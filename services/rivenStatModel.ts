@@ -17,7 +17,7 @@ export interface RivenStatModel {
 }
 
 export const RIVEN_DISPOSITION = 1.2;
-export const RIVEN_STAT_MODELS = data.stats as RivenStatModel[];
+const RIVEN_STAT_MODELS = data.stats as RivenStatModel[];
 const normalizeName = (name: string): string => name.toLowerCase().replace(/[^a-z]/g, "");
 const byName = new Map(
   RIVEN_STAT_MODELS.flatMap((stat) =>
@@ -48,11 +48,7 @@ export function rivenClassForType(type: string): RivenWeaponClass | null {
 }
 
 /** Shape multipliers, including the sign of a curse. Invalid/partial cards have no shape. */
-export function rivenShapeMultiplier(
-  buffs: number,
-  curses: number,
-  positive: boolean,
-): number | null {
+function rivenShapeMultiplier(buffs: number, curses: number, positive: boolean): number | null {
   if ((buffs !== 2 && buffs !== 3) || (curses !== 0 && curses !== 1)) return null;
   if (!positive) return curses === 1 ? (buffs === 2 ? -0.495 : -0.75) : null;
   return buffs === 2 ? (curses ? 1.2375 : 0.99) : curses ? 0.9375 : 0.75;
