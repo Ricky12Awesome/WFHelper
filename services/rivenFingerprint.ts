@@ -16,6 +16,13 @@ import type {
   VeiledRivenGroup,
 } from "../config/shared/rivenTypes";
 import { lerp } from "../config/shared/numeric";
+import {
+  rivenClassForType,
+  rivenDisplayValue,
+  rivenStatForTag,
+  type RivenStatModel,
+  type RivenWeaponClass,
+} from "./rivenStatModel";
 
 const log = withScope("rivenFingerprint");
 
@@ -170,11 +177,10 @@ function getRivenTypeLabel(itemType: string): string {
   return "Riven";
 }
 
-// Fingerprint Values encode rolls as Math.round(f * 0x3FFFFFFF), not IEEE floats.
-// Source: browse.wf/rivencalc -> RivenParser.js `rivenIntToFloat`.
+// Fingerprint Values encode the roll fraction in units of 2^-30.
 
 function rivenIntToFloat(i: number): number {
-  const f = i / 0x3fffffff; // 1073741823
+  const f = i / 2 ** 30; // Game fingerprint roll fraction.
   return f >= 0.0 && f <= 1.0 ? f : 0.0;
 }
 
@@ -221,13 +227,33 @@ interface StatValueContext {
   numCurses: number;
   isNonPct: boolean;
   isMultiplier: boolean;
+  model: RivenStatModel | null;
+  cls: RivenWeaponClass | null;
 }
 
 function roundStatValue(raw: number, isNonPct: boolean): number {
   return isNonPct ? Math.round(raw * 100) / 100 : Math.round(raw * 1000) / 10;
 }
 
+function modelValueAt(ctx: StatValueContext, lvl: number, positive: boolean): number | null {
+  if (!ctx.model || !ctx.cls) return null;
+  const value = rivenDisplayValue(
+    ctx.model,
+    ctx.cls,
+    ctx.numBuffs,
+    ctx.numCurses,
+    positive,
+    ctx.rollFloat,
+    lvl,
+  );
+  if (value === null) return null;
+  const decimals = ctx.model.unit === "mult" ? 100 : 10;
+  return Math.round(value * decimals) / decimals;
+}
+
 function buffValueAt(ctx: StatValueContext, lvl: number): number {
+  const current = modelValueAt(ctx, lvl, true);
+  if (current !== null) return current;
   if (ctx.baseValue === 0) return ctx.isMultiplier ? 1 : 0;
   const raw = computeBuffValue(
     ctx.baseValue,
@@ -244,6 +270,8 @@ function buffValueAt(ctx: StatValueContext, lvl: number): number {
 /** Curse direction is the opposite of the stat's buff direction: a damage curse
  *  shows -X%, a recoil curse (negative baseValue) shows +X%. */
 function curseValueAt(ctx: StatValueContext, lvl: number): number {
+  const current = modelValueAt(ctx, lvl, false);
+  if (current !== null) return current;
   if (ctx.baseValue === 0) return 0;
   const raw = computeCurseValue(
     Math.abs(ctx.baseValue),
@@ -327,6 +355,8 @@ function decodeSingleRiven(entry: {
       numCurses,
       isNonPct,
       isMultiplier,
+      model: rivenStatForTag(b.Tag),
+      cls: rivenClassForType(rivenTypeKey),
     };
 
     const grade = rivenGrading.floatToGrade(rollFloat, false);
@@ -363,6 +393,8 @@ function decodeSingleRiven(entry: {
       numCurses,
       isNonPct,
       isMultiplier,
+      model: rivenStatForTag(c.Tag),
+      cls: rivenClassForType(rivenTypeKey),
     };
 
     const grade = rivenGrading.floatToGrade(rollFloat, true);
@@ -379,7 +411,7 @@ function decodeSingleRiven(entry: {
       multiplier: isMultiplier,
     });
 
-    rollFloatSum += 1 - rollFloat; // For curses, lower = better
+    rollFloatSum += rollFloat; // Splicing grades curses by their rolled magnitude too.
     scoredCount++;
   }
 

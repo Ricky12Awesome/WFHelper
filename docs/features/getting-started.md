@@ -55,7 +55,7 @@ To check a reward scan:
 3. When the reward choices appear, wait for the reward overlay to show their prices.
 4. If it does not appear, check the overlay settings and the **Relic trigger hotkey** in **Settings > Overlays**. On Linux, also check the screen-share permission described below.
 
-To move an overlay later, use **Position overlays** in **Settings > Overlays**, or press the unlock hotkey shown on the overlay and drag it. Native Wayland never delivers that hotkey; see Linux setup below.
+To move an overlay later, use **Position overlays** in **Settings > Overlays**, or press the unlock hotkey shown on the overlay and drag it. On native Wayland, shortcut support depends on the compositor; see Linux setup below.
 
 ## Customize overlay contents
 
@@ -77,9 +77,11 @@ On GNOME, KDE Plasma and COSMIC, the first capture in a session asks you to shar
 
 Keeping your warframe.market sign-in across restarts needs a keyring, such as gnome-keyring, KWallet or KeePassXC with Secret Service turned on. WFHelper uses a running keyring on its own; if it still asks you to sign in after every restart, start it with `--password-store=gnome-libsecret`.
 
-Overlays work on X11, XWayland and native Wayland. On native Wayland they use the layer-shell protocol (KDE Plasma, Sway, Hyprland, niri, COSMIC); GNOME does not offer it, so WFHelper uses XWayland there. SteamOS game mode is unsupported.
+Overlays work on X11, XWayland and native Wayland. In a Wayland session they use the layer-shell protocol where available (KDE Plasma, Sway, Hyprland, niri, COSMIC), even when the main app uses XWayland. Interactive mode takes focus so the game's mouse grab does not block clicks; switching back restores click-through. GNOME does not offer layer-shell, so WFHelper uses XWayland windows there. SteamOS game mode is unsupported.
 
-Native Wayland gives apps no global hotkeys, so the overlay unlock hotkey never fires there. Select **Switch to interactive overlays** in **Settings > Overlays** and overlays open ready for clicks; the same button switches back. You can also bind `--toggle-overlay-interaction` to a key in your compositor. It switches the overlays on screen without opening the WFHelper window. In niri:
+On Hyprland, enable **Enable overlay interaction toggle** and choose a key in **Settings > Overlays**. WFHelper registers it with the compositor while Warframe runs, so F7 works with native Wayland games and also switches interactive overlays back to click-through. It preserves existing compositor bindings; choose another key if yours is already assigned. The binding survives a Hyprland config reload and is released when Warframe closes.
+
+Other native Wayland desktops may not deliver the global hotkey. Select **Switch to interactive overlays** in **Settings > Overlays** and overlays open ready for clicks; the same button switches back. You can also bind `--toggle-overlay-interaction` to a key in your compositor. It switches the overlays on screen without opening the WFHelper window. In niri:
 
 ```
 Mod+I { spawn "/path/to/WFHelper.AppImage" "--toggle-overlay-interaction"; }

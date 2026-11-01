@@ -483,8 +483,49 @@ describe("linux game window locator", () => {
     expect(topLeftRgb(onGame.image)).toEqual(GAME_TOP_ROW);
 
     __test__.resetGameWindowCacheForTest();
-    const elsewhere = await scan(canvas, { kind: "screen-copy", output: "DP-1" });
-    expect(elsewhere.type).toBe("screen");
+    mocks.captureLinuxStreamFrame.mockResolvedValue(
+      streamFrame(fakeImage(canvas.width, canvas.height, canvas.pixels), {
+        kind: "screen-copy",
+        output: "DP-1",
+      }),
+    );
+    expect(await captureScreenFast()).toBeNull();
+  });
+
+  it("captures a native Hyprland game on the HDR output despite unrelated X11 geometry", async () => {
+    process.env.HYPRLAND_INSTANCE_SIGNATURE = "hypr";
+    vi.stubEnv("XDG_RUNTIME_DIR", "/run/user/1000");
+    try {
+      mocks.compositorGameRect.mockResolvedValue({
+        rect: { x: 2560, y: 0, width: 2560, height: 1440 },
+        output: "DP-1",
+      });
+      mocks.getWarframeWindowBoundsX11.mockResolvedValue({ x: 0, y: 0, width: 1200, height: 800 });
+      mocks.layerOutputRects.mockReturnValue([
+        outputRect("DP-1", 2560, 2560, 1440),
+        outputRect("DP-2", 0, 2560, 1440),
+      ]);
+      const canvas = new Canvas(2560, 1440, GAP);
+      const result = await scan(canvas, { kind: "screen-copy", output: "DP-1" });
+      expect(result).toMatchObject({ size: { width: 2560, height: 1440 }, type: "window" });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("returns no OCR frame when the niri game workspace is hidden", async () => {
+    process.env.NIRI_SOCKET = "/run/niri.sock";
+    mocks.niriGameGeometry.mockResolvedValue(
+      niriTiled({ width: 1920, height: 1080 }, { visible: false }),
+    );
+    const canvas = new Canvas(1920, 1080, GAP);
+    mocks.captureLinuxStreamFrame.mockResolvedValue(
+      streamFrame(fakeImage(canvas.width, canvas.height, canvas.pixels), {
+        kind: "screen-copy",
+        output: "Virtual-1",
+      }),
+    );
+    expect(await captureScreenFast()).toBeNull();
   });
 
   it("trusts X11 positions where a real window manager places windows", async () => {

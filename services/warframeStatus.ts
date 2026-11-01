@@ -410,7 +410,8 @@ export function parseWarframeWindowBounds(treeOutput: string): WindowBounds | nu
   for (const line of String(treeOutput || "").split("\n")) {
     const match = XWININFO_WINDOW_RE.exec(line);
     if (!match) continue;
-    if (!/warframe/i.test(`${match[1]} ${match[2]}`)) continue;
+    if (!isWarframeGameWindow({ title: match[1].replace(/^"|"$/g, ""), wmClass: match[2] }))
+      continue;
 
     const bounds = {
       x: Number(match[5]),
@@ -428,14 +429,6 @@ export function parseWarframeWindowBounds(treeOutput: string): WindowBounds | nu
 
 let _linuxWindowProbeUnavailable = false;
 let _loggedGeometrySource: string | null = null;
-const WARFRAME_WINDOW_TITLE_RE = /warframe/i;
-
-// The last resort for geometry: a window that only mentions the game may be a
-// browser on warframe.market.
-function mentionsWarframe({ title, wmClass }: X11WindowNames): boolean {
-  return WARFRAME_WINDOW_TITLE_RE.test(`${title} ${wmClass}`);
-}
-
 // Focus and presence need the game itself: a browser on warframe.market is not it.
 function isWarframeGameWindow({ title, wmClass }: X11WindowNames): boolean {
   return namesWarframeGame({ title, appId: wmClass });
@@ -477,20 +470,15 @@ function hasX11GameWindow(): boolean {
   return _x11GameWindow;
 }
 
-/** X11 first: a window under XWayland is also visible to the wayland sources,
- * but only X11 reports its real geometry rather than the output it covers. */
+/** Compositor geometry works for both native Wayland and XWayland. An unrelated
+ *  X11 window must not override a native game's output or content bounds. */
 export async function getWarframeWindowBoundsLinux(): Promise<WindowBounds | null> {
-  const own = x11GameWindowBounds();
-  if (own) return own;
-
-  // A native wayland game has no X11 window, so the compositor answers before
-  // an X11 window that merely mentions the game.
   const wayland = await waylandGameBounds();
   if (wayland) {
     const { source, ...bounds } = wayland;
     return noteGeometrySource(source, bounds);
   }
-  return anyX11WarframeBounds();
+  return getWarframeWindowBoundsX11();
 }
 
 function x11GameWindowBounds(): WindowBounds | null {
@@ -508,8 +496,6 @@ async function anyX11WarframeBounds(): Promise<WindowBounds | null> {
 
   // libX11 needs nothing installed; xwininfo is the fallback because it also
   // matches WM_CLASS, which helps if the title is localised or empty.
-  const native = findWindowBoundsMatching(mentionsWarframe, MIN_GAME_WINDOW_EDGE_PX);
-  if (native) return noteGeometrySource("libX11", native);
   if (_linuxWindowProbeUnavailable) return null;
 
   try {

@@ -9,6 +9,7 @@ import {
   info,
   initialize,
   isNativeWayland,
+  isWaylandSession,
   isTilingCompositor,
   isXServerReachable,
   rememberXWaylandFailure,
@@ -146,6 +147,25 @@ describe("isNativeWayland", () => {
   it("is false off linux", () => {
     start(WAYLAND, "win32");
     expect(isNativeWayland()).toBe(false);
+  });
+});
+
+describe("isWaylandSession", () => {
+  it("stays true when the Wayland session runs the app on XWayland", () => {
+    start(WAYLAND, "linux", "1.0.0", ["--ozone-platform=x11"]);
+    expect(isWaylandSession()).toBe(true);
+  });
+
+  it("is true for a native Wayland session", () => {
+    start({ XDG_SESSION_TYPE: "wayland", WAYLAND_DISPLAY: "wayland-1" });
+    expect(isWaylandSession()).toBe(true);
+  });
+
+  it("is false on plain X11 and on Windows", () => {
+    start({ DISPLAY: ":0" });
+    expect(isWaylandSession()).toBe(false);
+    start(WAYLAND, "win32");
+    expect(isWaylandSession()).toBe(false);
   });
 });
 

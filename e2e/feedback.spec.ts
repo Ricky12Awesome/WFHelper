@@ -44,6 +44,7 @@ test("feedback previews optional data and preserves a failed draft without dupli
     );
 
     const open = page.locator("#sidebar [data-feedback-open]");
+    await page.locator("#sidebar [data-sidebar-tools-toggle]").click();
     await expect(open).toBeVisible();
     const buttonBounds = await open.boundingBox();
     const sidebarBounds = await page.locator("#sidebar").boundingBox();

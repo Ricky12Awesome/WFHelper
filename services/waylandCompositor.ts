@@ -64,10 +64,6 @@ export function namesWarframeGame(candidate: WarframeWindowCandidate): boolean {
   return hasGameAppId(candidate) || hasGameTitle(candidate);
 }
 
-function mentionsGame(candidate: WarframeWindowCandidate): boolean {
-  return WARFRAME_NAME_RE.test(candidate.title);
-}
-
 function bestOf<T extends WarframeWindowCandidate>(candidates: T[]): T | null {
   return (
     candidates.find((entry) => entry.activated === true) ??
@@ -79,7 +75,7 @@ function bestOf<T extends WarframeWindowCandidate>(candidates: T[]): T | null {
 
 /** The game window for every compositor path; a wiki tab or Steam dialog also has the name. */
 export function pickWarframeWindow<T extends WarframeWindowCandidate>(candidates: T[]): T | null {
-  for (const matches of [hasGameAppId, hasGameTitle, mentionsGame]) {
+  for (const matches of [hasGameAppId, hasGameTitle]) {
     const tier = candidates.filter(matches);
     if (tier.length > 0) return bestOf(tier);
   }

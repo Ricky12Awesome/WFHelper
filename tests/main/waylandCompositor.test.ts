@@ -73,9 +73,9 @@ describe("pickWarframeWindow", () => {
     expect(pickWarframeWindow([])).toBeNull();
   });
 
-  it("still takes a lone weak match when the game is not listed", () => {
+  it("ignores a weak title match when the game is not listed", () => {
     const terminal = { title: "Terminal", appId: "foot" };
-    expect(pickWarframeWindow([terminal, wiki])).toBe(wiki);
+    expect(pickWarframeWindow([terminal, wiki])).toBeNull();
   });
 
   it("knows the game by its steam app id alone, whatever its case", () => {

@@ -245,7 +245,7 @@
       toRivenStat(attribute, grade?.stats[index]),
     );
     const scored = grade
-      ? stats.map((stat) => (stat.positive ? stat.rollFloat : 1 - stat.rollFloat))
+      ? stats.filter((stat) => stat.grade && stat.grade !== "?").map((stat) => stat.rollFloat)
       : [];
     return {
       itemId: contract.id,
@@ -257,7 +257,7 @@
       maxRank: 8,
       rerolls: contract.rerolls ?? 0,
       polarity: contract.polarity ?? "",
-      disposition: 1,
+      disposition: 1.2,
       stats,
       overallGrade: grade?.overallGrade ?? "",
       attributeGrade: grade === undefined ? "" : (grade?.attributeGrade ?? "?"),

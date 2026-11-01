@@ -8,17 +8,20 @@ const deps = vi.hoisted(() => ({
   rects: [] as Array<Record<string, unknown>>,
 }));
 
-vi.mock("../../services/waylandCompositor", () => ({
+vi.mock("../../services/waylandCompositor", async (original) => ({
+  ...(await original<typeof import("../../services/waylandCompositor")>()),
   resolveGameOutput: vi.fn(async () => deps.compositorOutput),
 }));
 
 vi.mock("../../services/warframeStatus", () => ({
   getWarframeWindowBoundsLinux: vi.fn(async () => deps.gameBounds),
+  x11PositionDistrust: () => null,
 }));
 
 vi.mock("../../services/layerShell", () => ({
   createLayerSurface: vi.fn(() => null),
   layerOutputRects: vi.fn(() => deps.rects),
+  layerToplevels: () => null,
 }));
 
 beforeEach(() => {
@@ -473,7 +476,7 @@ describe("createLayerPresentation", () => {
 
       presentation.setInteractive(true);
 
-      expect(surface.setInteractive).toHaveBeenCalledWith(true, expect.any(Function));
+      expect(surface.setInteractive).toHaveBeenCalledWith(true, expect.any(Function), true);
     });
 
     // The surface is remade on every show and starts click-through.
@@ -482,7 +485,27 @@ describe("createLayerPresentation", () => {
       presentation.setInteractive(true);
       await presentation.show();
 
-      expect(surface.setInteractive).toHaveBeenCalledWith(true, expect.any(Function));
+      expect(surface.setInteractive).toHaveBeenCalledWith(true, expect.any(Function), true);
+    });
+
+    it("can accept pointer input without taking keyboard focus", async () => {
+      const { presentation, surface } = interactiveBuild();
+      await presentation.show();
+
+      presentation.setInteractive(true, false);
+
+      expect(surface.setInteractive).toHaveBeenCalledWith(true, expect.any(Function), false);
+    });
+
+    it("preserves the focus choice when a hidden surface is shown again", async () => {
+      const { presentation, surface } = interactiveBuild();
+      presentation.setInteractive(true, true);
+      await presentation.show();
+      presentation.hide();
+
+      await presentation.show();
+
+      expect(surface.setInteractive).toHaveBeenLastCalledWith(true, expect.any(Function), true);
     });
 
     it("turns a click into a down and an up on the offscreen window", async () => {
@@ -682,12 +705,12 @@ describe("choosing the monitor the game is on", () => {
     expect(await chosenOutput()).toBe("DP-3");
   });
 
-  it("takes the measured rect over the compositor's answer", async () => {
+  it("takes the compositor's game output over an X11 rect", async () => {
     twoMonitors();
     deps.compositorOutput = "DP-2";
     deps.gameBounds = { x: 0, y: 0, width: 3440, height: 1440 };
 
-    expect(await chosenOutput()).toBe("DP-3");
+    expect(await chosenOutput()).toBe("DP-2");
   });
 
   it("asks the compositor when no output carries a position", async () => {

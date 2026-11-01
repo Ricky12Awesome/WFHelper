@@ -73,6 +73,7 @@ vi.mock("../../ipc/trayIpc", () => ({
 vi.mock("../../ipc/hotkeyRegistry", () => ({
   disposeAppHotkeys: vi.fn(),
   overlayHotkeyBackend: {},
+  overlayInteractionHotkeyBackend: {},
 }));
 vi.mock("../../ipc/overlay/settings", () => ({
   createOverlaySettingsController: (options: {

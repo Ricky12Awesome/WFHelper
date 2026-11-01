@@ -62,6 +62,21 @@ function contract(weaponName: string, stats: unknown, modRank?: unknown): unknow
   return modRank === undefined ? { weaponName, stats } : { weaponName, stats, modRank };
 }
 
+const AKSTILETTO_PLUS_PLUS = [
+  { name: "critical_damage", positive: true, value: 106.9 },
+  { name: "multishot", positive: true, value: 142.2 },
+];
+const AKSTILETTO_PLUS_PLUS_MINUS = [
+  { name: "critical_damage", positive: true, value: 133.7 },
+  { name: "multishot", positive: true, value: 177.8 },
+  { name: "zoom", positive: false, value: -47.6 },
+];
+const AKSTILETTO_RANK_ZERO = [
+  { name: "critical_damage", positive: true, value: 14.9 },
+  { name: "multishot", positive: true, value: 19.8 },
+  { name: "zoom", positive: false, value: -5.3 },
+];
+
 const SHEET = {
   akstiletto: {
     goodAttrs: [{ mandatory: ["WeaponCritDamageMod"], optional: ["WeaponFireIterationsMod"] }],
@@ -95,9 +110,7 @@ describe("grade-riven-contracts payload validation", () => {
   });
 
   it("answers null in the slot of a malformed entry and still grades its neighbours", async () => {
-    const good = contract("Akstiletto", [
-      { name: "critical_damage", positive: true, value: 120.5 },
-    ]);
+    const good = contract("Akstiletto", AKSTILETTO_PLUS_PLUS, 8);
     const results = await grade([
       good,
       null,
@@ -119,16 +132,24 @@ describe("grade-riven-contracts payload validation", () => {
   });
 
   it("converts a value the payload spelled as a string or a boxed number", async () => {
-    const [plain] = await grade([
-      contract("Akstiletto", [{ name: "critical_damage", positive: true, value: 120.5 }]),
-    ]);
+    const [plain] = await grade([contract("Akstiletto", AKSTILETTO_PLUS_PLUS, 8)]);
     const [text] = await grade([
-      contract("Akstiletto", [{ name: "critical_damage", positive: true, value: "120.5" }]),
+      contract(
+        "Akstiletto",
+        AKSTILETTO_PLUS_PLUS.map((s) =>
+          s.name === "critical_damage" ? { ...s, value: "106.9" } : s,
+        ),
+        8,
+      ),
     ]);
     const [boxed] = await grade([
-      contract("Akstiletto", [
-        { name: "critical_damage", positive: true, value: { $numberDouble: "120.5" } },
-      ]),
+      contract(
+        "Akstiletto",
+        AKSTILETTO_PLUS_PLUS.map((s) =>
+          s.name === "critical_damage" ? { ...s, value: { $numberDouble: "106.9" } } : s,
+        ),
+        8,
+      ),
     ]);
 
     expect(plain?.stats[0].grade).toMatch(/^[SABCF][+-]?$/);
@@ -138,10 +159,15 @@ describe("grade-riven-contracts payload validation", () => {
 
   it("leaves a stat listed without a value ungraded instead of scoring it a zero roll", async () => {
     const [result] = await grade([
-      contract("Akstiletto", [
-        { name: "critical_damage", positive: true, value: null },
-        { name: "multishot", positive: true, value: 88.2 },
-      ]),
+      contract(
+        "Akstiletto",
+        [
+          { name: "critical_damage", positive: true, value: null },
+          AKSTILETTO_PLUS_PLUS_MINUS[1],
+          AKSTILETTO_PLUS_PLUS_MINUS[2],
+        ],
+        8,
+      ),
     ]);
 
     expect(result?.stats[0].grade).toBe("?");
@@ -167,12 +193,8 @@ describe("grade-riven-contracts payload validation", () => {
 });
 
 describe("grade-riven-contracts rank", () => {
-  const RANK_0 = [
-    { name: "critical_damage", positive: true, value: 10 },
-    { name: "multishot", positive: true, value: 13 },
-    { name: "zoom", positive: false, value: -3.5 },
-  ];
-  const RANK_8 = RANK_0.map((stat) => ({ ...stat, value: stat.value * 9 }));
+  const RANK_0 = AKSTILETTO_RANK_ZERO;
+  const RANK_8 = AKSTILETTO_PLUS_PLUS_MINUS;
 
   it("reads a rank-0 listing like its rank-8 twin", async () => {
     const [unranked] = await grade([contract("Akstiletto", RANK_0, 0)]);
@@ -184,26 +206,25 @@ describe("grade-riven-contracts rank", () => {
   });
 
   it("forwards the stated rank instead of guessing it", async () => {
-    const oneStat = RANK_0.slice(0, 1);
-    const [stated] = await grade([contract("Akstiletto", oneStat, 0)]);
-    const [guessed] = await grade([contract("Akstiletto", oneStat)]);
+    const [stated] = await grade([contract("Akstiletto", RANK_0, 0)]);
+    const [guessed] = await grade([contract("Akstiletto", RANK_0)]);
 
-    expect(stated?.stats[0].rollFloat).toBeGreaterThan(0);
-    expect(stated?.stats[0].rollFloat).toBeLessThan(1);
-    expect(guessed?.stats[0].rollFloat).toBe(0);
+    expect(stated?.stats.every((s) => s.grade !== "?")).toBe(true);
+    expect(guessed?.stats.map((s) => s.grade)).toEqual(stated?.stats.map((s) => s.grade));
+    expect(guessed?.overallGrade).toBe(stated?.overallGrade);
   });
 
-  it("does not pin a rank the listed values contradict", async () => {
+  it("does not replace a stated rank to rescue contradictory values", async () => {
     const [stated] = await grade([contract("Akstiletto", RANK_8, 0)]);
     const [searched] = await grade([contract("Akstiletto", RANK_8)]);
 
-    expect(stated?.stats.map((s) => s.grade)).toEqual(searched?.stats.map((s) => s.grade));
-    expect(stated?.overallGrade).toBe(searched?.overallGrade);
+    expect(stated?.stats.every((s) => s.grade === "?")).toBe(true);
+    expect(searched?.stats.every((s) => s.grade !== "?")).toBe(true);
   });
 });
 
 describe("grade-riven-contracts sheet availability", () => {
-  const CARD = [{ name: "critical_damage", positive: true, value: 120.6 }];
+  const CARD = AKSTILETTO_PLUS_PLUS;
 
   it("answers the roll grade while the sheet is still loading", async () => {
     setRivenGoodRollsForTest({}, null);
@@ -243,13 +264,7 @@ describe("grade-riven-contracts sheet availability", () => {
 
 describe("grade-riven-contracts grading", () => {
   it("grades a contract-shaped payload of WFM url_names", async () => {
-    const [result] = await grade([
-      contract("Akstiletto", [
-        { name: "critical_damage", positive: true, value: 120.5 },
-        { name: "multishot", positive: true, value: 88.2 },
-        { name: "zoom", positive: false, value: -31.4 },
-      ]),
-    ]);
+    const [result] = await grade([contract("Akstiletto", AKSTILETTO_PLUS_PLUS_MINUS, 8)]);
 
     expect(result).not.toBeNull();
     expect(result?.overallGrade).toMatch(/^[SABCF][+-]?$/);
@@ -269,12 +284,19 @@ describe("grade-riven-contracts grading", () => {
 
     expect(result).not.toBeNull();
     expect(result?.attributeGrade).toBe("?");
-    expect(result?.stats[0].grade).toMatch(/^[SABCF][+-]?$/);
+    expect(result?.stats[0].grade).toBe("?");
   });
 
   it("reads faction damage as the listed multiplier, not as a percentage", async () => {
     const [result] = await grade([
-      contract("Akstiletto", [{ name: "damage_vs_corpus", positive: true, value: 1.45 }]),
+      contract(
+        "Akstiletto",
+        [
+          { name: "critical_damage", positive: true, value: 106.9 },
+          { name: "damage_vs_corpus", positive: true, value: 1.55 },
+        ],
+        8,
+      ),
     ]);
 
     expect(result).not.toBeNull();

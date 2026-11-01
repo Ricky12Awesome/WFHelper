@@ -303,8 +303,9 @@ export function register(pushOverlayThemeVars: () => void): void {
   });
 
   handleAuthorized(OVERLAY_GET_DRAG_HINT, assertOverlayRendererSender, async () => {
-    // Native Wayland delivers no global hotkeys, so only the Settings switch unlocks overlays.
-    const viaSettings = isNativeWayland();
+    // Hyprland registers the key with the compositor, including for native
+    // Wayland games. Other native sessions still need the Settings switch.
+    const viaSettings = isNativeWayland() && !ctx.overlayInteractionHotkeyRegistered;
     return {
       hotkey:
         !viaSettings && ctx.overlaySettings.interactionHotkeyEnabled

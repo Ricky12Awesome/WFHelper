@@ -29,6 +29,10 @@ the size they were cropped from and scanned with the same crop:
 - `roll-card-boar-argi.png` (1811x1019 window): all three stats.
 - `initial-card-sobek-small-ui.png` (1808x1017, small interface scale): all
   four stats, which needs the text-bounds retry crop.
+- `initial-card-bramma-ammo-efficiency.png` (2000x1125): all three stats,
+  including wrapped, trait-locked Ammo Efficiency and positive-signed recoil
+  correctly treated as a curse. The real OCR output must also grade B, S, B
+  (overall A-) against the current model.
 
 Chat-linked cards and choice screens still need full-frame fixtures. Live
 capture and event timing need separate tests.

@@ -523,12 +523,13 @@ function isBlankFrame(frame: RawFrame): boolean {
 
 let _warnedNoCopyTarget = false;
 
-// Unknown on one monitor is still an answer; with several the first is a guess,
-// and the screen copy log line names the monitor it took.
+// One monitor cannot be the wrong one. With several, guessing feeds unrelated
+// desktop text to OCR and hides a capture failure behind an empty scan.
 async function _screenCopyTarget(): Promise<string | null> {
   const game = await resolveOutputForGame();
   if (game) return game;
-  return layerOutputRects()[0]?.name ?? null;
+  const outputs = layerOutputRects();
+  return outputs.length === 1 ? outputs[0].name : null;
 }
 
 // Every attempt settles _lastFailure, which also retires a portal failure from
@@ -538,9 +539,9 @@ async function _captureScreenCopyFrame(): Promise<LinuxFrame | null> {
   if (!output) {
     if (!_warnedNoCopyTarget) {
       _warnedNoCopyTarget = true;
-      log.warn("[LinuxCapture] screen copy found no monitor to copy");
+      log.warn("[LinuxCapture] cannot identify Warframe's monitor for screen copy");
     }
-    _lastFailure = "screen copy found no monitor";
+    _lastFailure = "cannot identify Warframe's monitor for screen copy";
     return null;
   }
   const copy = await copyOutput(output);

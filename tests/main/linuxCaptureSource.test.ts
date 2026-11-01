@@ -386,14 +386,15 @@ describe("screen copy capture", () => {
     expect(electronMocks.BrowserWindow).not.toHaveBeenCalled();
   });
 
-  it("takes the first monitor when the game's cannot be told", async () => {
+  it("does not copy an arbitrary monitor when the game's cannot be identified", async () => {
     screenCopy.available = true;
     screenCopy.outputs = ["HDMI-A-1", "DP-2"];
-    screenCopy.copyOutput.mockResolvedValue(copied);
+    screenCopy.copyOutput.mockResolvedValue(null);
 
-    await captureLinuxStreamFrame();
+    expect(await captureLinuxStreamFrame()).toBeNull();
 
-    expect(screenCopy.copyOutput).toHaveBeenCalledWith("HDMI-A-1");
+    expect(screenCopy.copyOutput).not.toHaveBeenCalled();
+    expect(getLinuxCaptureFailure()).toContain("cannot identify");
   });
 
   it("returns no frame and opens no portal when a copy fails", async () => {

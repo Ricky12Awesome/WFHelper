@@ -116,9 +116,9 @@ describe("floatToGrade", () => {
     expect(floatToGrade(0.024, false)).toBe("F");
   });
 
-  it("inverts for curses (low value = good curse)", () => {
-    expect(floatToGrade(1.0, true)).toBe("F");
-    expect(floatToGrade(0.0, true)).toBe("S");
+  it("grades curse magnitude in the same direction as buffs", () => {
+    expect(floatToGrade(1.0, true)).toBe("S");
+    expect(floatToGrade(0.0, true)).toBe("F");
     expect(floatToGrade(0.5, true)).toBe("B");
   });
 });
@@ -213,17 +213,17 @@ describe("rivenData", () => {
       expect(rivenData.getWeaponDisposition("Nonexistent Weapon")).toBeNull();
     });
 
-    it("resolves a Duviri melee name to the Tenno weapon, not the Drifter twin", () => {
-      expect(rivenData.getWeaponDisposition("Sampotes")).toBe(1);
-      expect(rivenData.getWeaponDisposition("Syam")).toBe(0.75);
-      expect(rivenData.getWeaponDisposition("Edun")).toBe(1.15);
-      expect(rivenData.getWeaponDisposition("Argo & Vel")).toBe(1.15);
-      expect(rivenData.getWeaponDisposition("Sun & Moon")).toBe(0.8);
-      expect(rivenData.getWeaponDisposition("Azothane")).toBe(1.1);
+    it("uses the standard disposition for known Duviri melee weapons", () => {
+      expect(rivenData.getWeaponDisposition("Sampotes")).toBe(1.2);
+      expect(rivenData.getWeaponDisposition("Syam")).toBe(1.2);
+      expect(rivenData.getWeaponDisposition("Edun")).toBe(1.2);
+      expect(rivenData.getWeaponDisposition("Argo & Vel")).toBe(1.2);
+      expect(rivenData.getWeaponDisposition("Sun & Moon")).toBe(1.2);
+      expect(rivenData.getWeaponDisposition("Azothane")).toBe(1.2);
     });
 
-    it("lists no Drifter disposition among a Duviri weapon's family variants", () => {
-      expect(rivenData.getFamilyVariants("Edun")).toEqual([{ name: "Edun", disposition: 1.15 }]);
+    it("lists Duviri melee family variants at standard disposition", () => {
+      expect(rivenData.getFamilyVariants("Edun")).toEqual([{ name: "Edun", disposition: 1.2 }]);
     });
   });
 
@@ -255,20 +255,20 @@ describe("rivenData", () => {
       expect(key).toContain("MeleeWeaponRandomModRare");
     });
 
-    it("lists family variants with dispositions", () => {
+    it("lists family variants at standard disposition", () => {
       const variants = rivenData.getFamilyVariants("Boar");
       const names = variants.map((v) => v.name);
       expect(names).toContain("Boar");
       expect(names).toContain("Boar Prime");
-      for (const v of variants) expect(v.disposition).toBeGreaterThan(0);
+      for (const v of variants) expect(v.disposition).toBe(1.2);
     });
 
-    it("lists a kitgun chamber under its own name only", () => {
+    it("lists kitgun chambers under their own names at standard disposition", () => {
       expect(rivenData.getFamilyVariants("Tombfinger")).toEqual([
-        { name: "Tombfinger", disposition: 0.85 },
+        { name: "Tombfinger", disposition: 1.2 },
       ]);
       expect(rivenData.getFamilyVariants("Rattleguts")).toEqual([
-        { name: "Rattleguts", disposition: 1 },
+        { name: "Rattleguts", disposition: 1.2 },
       ]);
     });
 
@@ -379,6 +379,11 @@ describe("rivenData", () => {
   });
 
   describe("statNameToTag", () => {
+    it("keeps the shared fire-rate label independent of the last indexed class", () => {
+      expect(rivenData.getStatDisplayName("WeaponFireRateMod")).toBe("Fire Rate");
+      expect(rivenData.getStatDisplayName("WeaponFireRateMod", true)).toBe("Attack Speed");
+    });
+
     it("maps common stat names to tags", () => {
       expect(rivenData.statNameToTag("Critical Chance")).toBe("WeaponCritChanceMod");
       expect(rivenData.statNameToTag("Multishot")).toBe("WeaponFireIterationsMod");
@@ -459,45 +464,44 @@ describe("gradeRiven", () => {
     ).toBeNull();
   });
 
-  it("grades a single buff stat", () => {
+  it("leaves a partial card ungraded because its shape is unknown", () => {
     const result = gradeRiven("Rubico Prime", [
       { name: "Critical Chance", positive: true, value: 90 },
     ]);
     expect(result).not.toBeNull();
     expect(result!.stats).toHaveLength(1);
-    expect(result!.stats[0].grade).toBeTruthy();
-    expect(result!.stats[0].rollFloat).toBeGreaterThanOrEqual(0);
-    expect(result!.stats[0].rollFloat).toBeLessThanOrEqual(1);
-    expect(result!.overallGrade).toBeTruthy();
+    expect(result!.stats[0].grade).toBe("?");
+    expect(result!.overallGrade).toBe("?");
   });
 
-  it("clamps a roll float no rank or disposition can fit", () => {
+  it("leaves a value no rank can fit ungraded", () => {
     const result = gradeRiven("Rubico Prime", [
       { name: "Critical Chance", positive: true, value: 9999 },
+      { name: "Multishot", positive: true, value: 106.9 },
     ]);
     expect(result).not.toBeNull();
-    expect(result!.stats[0].rollFloat).toBe(1);
-    expect(result!.stats[0].grade).toBe("S");
+    expect(result!.stats[0].grade).toBe("?");
+    expect(result!.stats[1].grade).toBe("B");
   });
 
   it("grades multiple stats including a curse", () => {
     const result = gradeRiven("Rubico Prime", [
-      { name: "Critical Chance", positive: true, value: 90 },
-      { name: "Multishot", positive: true, value: 70 },
-      { name: "Zoom", positive: false, value: 30 },
+      { name: "Critical Chance", positive: true, value: 222.7 },
+      { name: "Multishot", positive: true, value: 133.7 },
+      { name: "Zoom", positive: false, value: 35.6 },
     ]);
     expect(result).not.toBeNull();
     expect(result!.stats).toHaveLength(3);
     expect(result!.stats[2].positive).toBe(false);
-    expect(result!.stats[2].grade).toBeTruthy();
+    expect(result!.stats.map((s) => s.grade)).toEqual(["B", "B", "B"]);
   });
 
-  it("grades a Duviri melee card against the Tenno disposition", () => {
+  it("grades a Duviri melee card at standard disposition", () => {
     const result = gradeRiven("Edun", [
-      { name: "Melee Damage", positive: true, value: 177.6 },
+      { name: "Melee Damage", positive: true, value: 185.3 },
       { name: "Critical Damage", positive: true, value: 101.3 },
-      { name: "Attack Speed", positive: true, value: 56.8 },
-      { name: "Impact", positive: false, value: 101.2 },
+      { name: "Attack Speed", positive: true, value: 61.8 },
+      { name: "Impact", positive: false, value: 107.7 },
     ]);
     expect(result).not.toBeNull();
     for (const stat of result!.stats) {
@@ -507,9 +511,9 @@ describe("gradeRiven", () => {
     const grades = Object.fromEntries(result!.stats.map((s) => [s.name, s.grade]));
     expect(grades).toEqual({
       "Melee Damage": "B",
-      "Critical Damage": "A-",
-      "Attack Speed": "C+",
-      Impact: "B+",
+      "Critical Damage": "B",
+      "Attack Speed": "B",
+      Impact: "B",
     });
   });
 
@@ -526,19 +530,20 @@ describe("gradeRiven", () => {
 
   it("grades a mid-range Kuva Nukor riven with nothing clamped", () => {
     const result = gradeRiven("Kuva Nukor", [
-      { name: "Status Chance", positive: true, value: 42.6 },
-      { name: "Heat", positive: true, value: 41.2 },
-      { name: "Reload Speed", positive: true, value: 23.0 },
-      { name: "Zoom", positive: false, value: 29.8 },
+      { name: "Status Chance", positive: true, value: 101.3 },
+      { name: "Heat", positive: true, value: 101.3 },
+      { name: "Reload Speed", positive: true, value: 56.2 },
+      { name: "Zoom", positive: false, value: 72.1 },
     ]);
     expect(result).not.toBeNull();
     for (const stat of result!.stats) {
+      expect(stat.grade).toBe("B");
       expect(stat.rollFloat).toBeGreaterThan(0);
       expect(stat.rollFloat).toBeLessThan(1);
     }
   });
 
-  it("assigns B grade to unrecognised stat names", () => {
+  it("leaves unrecognised stat names ungraded", () => {
     const result = gradeRiven("Rubico Prime", [
       { name: "Critical Chance", positive: true, value: 90 },
       { name: "Some Unknown Stat", positive: true, value: 42 },
@@ -546,7 +551,7 @@ describe("gradeRiven", () => {
     expect(result).not.toBeNull();
     const unknownStat = result!.stats.find((s) => s.name === "Some Unknown Stat");
     expect(unknownStat).toBeDefined();
-    expect(unknownStat!.grade).toBe("B");
+    expect(unknownStat!.grade).toBe("?");
     expect(unknownStat!.rollFloat).toBe(0.5);
   });
 
@@ -560,9 +565,9 @@ describe("gradeRiven", () => {
 
   it("grades shotgun stats against shotgun bases (Boar Critacan regression)", () => {
     const result = gradeRiven("Boar", [
-      { name: "Multishot", positive: true, value: 199.3 },
-      { name: "Critical Chance", positive: true, value: 163.6 },
-      { name: "Slash", positive: false, value: 75.9 },
+      { name: "Multishot", positive: true, value: 177.8 },
+      { name: "Critical Chance", positive: true, value: 133.7 },
+      { name: "Slash", positive: false, value: 71.3 },
     ]);
     expect(result).not.toBeNull();
     for (const stat of result!.stats) {
@@ -571,47 +576,49 @@ describe("gradeRiven", () => {
     }
     const [multi, cc, slash] = result!.stats;
     expect(multi.grade).toBe("B");
-    expect(["S", "A+"]).toContain(cc.grade);
-    expect(slash.grade).toBe("A-");
+    expect(cc.grade).toBe("B");
+    expect(slash.grade).toBe("B");
   });
 
-  it("grades the linked Boar Prime card against its exact disposition", () => {
+  it("uses the same current ranges for Boar and Boar Prime", () => {
     const result = gradeRiven("Boar Prime", [
-      { name: "Critical Damage", positive: true, value: 109.9 },
-      { name: "Damage", positive: true, value: 202.5 },
-      { name: "Critical Chance", positive: true, value: 124 },
-      { name: "Impact", positive: false, value: 121 },
+      { name: "Critical Damage", positive: true, value: 101.3 },
+      { name: "Damage", positive: true, value: 185.3 },
+      { name: "Critical Chance", positive: true, value: 101.3 },
+      { name: "Impact", positive: false, value: 108 },
     ]);
 
-    expect(result?.stats.map((stat) => stat.grade)).toEqual(["B-", "B-", "S", "B"]);
+    expect(result?.stats.map((stat) => stat.grade)).toEqual(["B", "B", "B", "B"]);
+    expect(gradeRiven("Boar", result!.stats)).toEqual(result);
   });
 
   it("handles x-multiplier format", () => {
     const result = gradeRiven("Rubico Prime", [
-      { name: "Critical Damage", positive: true, value: 1.59, multiplier: true },
+      { name: "Damage to Grineer", positive: true, value: 1.54, multiplier: true },
+      { name: "Multishot", positive: true, value: 106.9 },
     ]);
     expect(result).not.toBeNull();
-    expect(result!.stats).toHaveLength(1);
-    expect(result!.stats[0].grade).toBeTruthy();
+    expect(result!.stats).toHaveLength(2);
+    expect(result!.stats[0].grade).not.toBe("?");
     expect(result!.stats[0].rollFloat).toBeGreaterThanOrEqual(0);
     expect(result!.stats[0].rollFloat).toBeLessThanOrEqual(1);
   });
 });
 
 describe("kitgun rolls", () => {
-  it("grades a chamber roll against the chamber's own disposition", () => {
-    expect(rivenData.getWeaponDisposition("Tombfinger")).toBe(0.85);
+  it("grades a chamber roll at standard disposition using pistol coefficients", () => {
+    expect(rivenData.getWeaponDisposition("Tombfinger")).toBe(1.2);
     const result = gradeRiven("Tombfinger", [
-      { name: "Critical Damage", positive: true, value: 66.4 },
-      { name: "Multishot", positive: true, value: 86.4 },
-      { name: "Critical Chance", positive: true, value: 115.6 },
-      { name: "Zoom", positive: false, value: 51.1 },
+      { name: "Critical Damage", positive: true, value: 101.3 },
+      { name: "Multishot", positive: true, value: 134.7 },
+      { name: "Critical Chance", positive: true, value: 168.7 },
+      { name: "Zoom", positive: false, value: 72.1 },
     ]);
     const grades = Object.fromEntries((result?.stats ?? []).map((s) => [s.name, s.grade]));
     expect(grades).toEqual({
-      "Critical Damage": "C",
-      Multishot: "C-",
-      "Critical Chance": "B-",
+      "Critical Damage": "B",
+      Multishot: "B",
+      "Critical Chance": "B",
       Zoom: "B",
     });
   });
@@ -781,30 +788,30 @@ describe("x-multiplier faction damage", () => {
     const at = (value: number) =>
       gradeRiven("Proboscis Cernos", [
         { name: "Damage to Infested", positive: true, value, multiplier: true },
-        { name: "Projectile Speed", positive: true, value: 77.2 },
+        { name: "Projectile Speed", positive: true, value: 106.9 },
       ])!.stats.find((s) => s.name === "Damage to Infested")!.rollFloat;
 
-    expect(at(1.4)).toBeGreaterThan(at(1.36));
+    expect(at(1.54)).toBeGreaterThan(at(1.52));
   });
 });
 
 describe("unranked cards", () => {
   const UNRANKED_WOLF_SLEDGE = [
     { name: "Range", positive: true, value: 0.2 },
-    { name: "Critical Damage", positive: true, value: 12.3 },
-    { name: "Attack Speed", positive: true, value: 7.3 },
-    { name: "Impact", positive: false, value: 12.2 },
+    { name: "Critical Damage", positive: true, value: 11.3 },
+    { name: "Attack Speed", positive: true, value: 6.9 },
+    { name: "Impact", positive: false, value: 12.0 },
   ];
   const UNRANKED_OBEX = [
-    { name: "Range", positive: true, value: 0.3 },
-    { name: "Electricity", positive: true, value: 11.4 },
-    { name: "Status Chance", positive: true, value: 13.2 },
-    { name: "Impact", positive: false, value: 12.9 },
+    { name: "Range", positive: true, value: 0.2 },
+    { name: "Electricity", positive: true, value: 11.3 },
+    { name: "Status Chance", positive: true, value: 11.3 },
+    { name: "Impact", positive: false, value: 12.0 },
   ];
   const UNRANKED_PANTHERA = [
-    { name: "Zoom", positive: true, value: 10.1 },
-    { name: "Cold", positive: true, value: 16.3 },
-    { name: "Status Chance", positive: false, value: 6.6 },
+    { name: "Zoom", positive: true, value: 9.9 },
+    { name: "Cold", positive: true, value: 14.9 },
+    { name: "Status Chance", positive: false, value: 5.9 },
   ];
 
   it.each([
@@ -815,30 +822,34 @@ describe("unranked cards", () => {
     const result = gradeRiven(weapon, stats);
 
     expect(result).not.toBeNull();
-    expect(result!.stats.some((s) => s.rollFloat > 0 && s.rollFloat < 1)).toBe(true);
+    expect(result!.stats.every((s) => s.grade !== "?")).toBe(true);
     expect(result!.overallGrade).not.toBe("F");
   });
 
-  it("keeps the same grades when the card is scanned at max rank", () => {
+  it("preserves the wider uncertainty caused by rounding range on an unranked card", () => {
     const unranked = gradeRiven("Wolf Sledge", UNRANKED_WOLF_SLEDGE);
-    const maxRank = gradeRiven(
-      "Wolf Sledge",
-      UNRANKED_WOLF_SLEDGE.map((stat) => ({ ...stat, value: stat.value * 9 })),
-    );
+    const maxRank = gradeRiven("Wolf Sledge", [
+      { name: "Range", positive: true, value: 2.2 },
+      { name: "Critical Damage", positive: true, value: 101.3 },
+      { name: "Attack Speed", positive: true, value: 61.8 },
+      { name: "Impact", positive: false, value: 107.7 },
+    ]);
 
-    expect(maxRank!.stats.map((s) => s.grade)).toEqual(unranked!.stats.map((s) => s.grade));
+    expect(unranked!.stats.map((s) => s.grade)).toEqual(["F / B+", "B", "B", "B"]);
+    expect(maxRank!.stats.map((s) => s.grade)).toEqual(["B- / B+", "B", "B", "B"]);
   });
 
   it("grades an unranked Verglas, a sentinel weapon, on the rifle pool", () => {
     const result = gradeRiven("Verglas", [
-      { name: "Critical Damage", positive: true, value: 16.4 },
-      { name: "Damage", positive: true, value: 23.9 },
-      { name: "Critical Chance", positive: true, value: 18.5 },
+      { name: "Critical Damage", positive: true, value: 15.0 },
+      { name: "Damage", positive: true, value: 20.6 },
+      { name: "Critical Chance", positive: true, value: 18.7 },
       { name: "Damage to Infested", positive: false, value: 0.95, multiplier: true },
     ]);
 
     expect(result).not.toBeNull();
     for (const stat of result!.stats) {
+      expect(stat.grade).not.toBe("?");
       expect(stat.rollFloat).toBeGreaterThan(0);
       expect(stat.rollFloat).toBeLessThan(1);
     }
@@ -849,70 +860,76 @@ describe("unranked cards", () => {
       { name: "Critical Damage", positive: true, value: 12.3 },
     ]);
 
-    expect(result!.stats[0].rollFloat).toBe(0);
+    expect(result!.stats[0].grade).toBe("?");
   });
 
-  it("grades a card whose curse the scan dropped on the rolls it shows", () => {
-    const maxRank = UNRANKED_WOLF_SLEDGE.map((stat) => ({ ...stat, value: stat.value * 9 }));
+  it("does not invent a dropped curse to explain values inconsistent with the visible shape", () => {
+    const maxRank = [
+      { name: "Range", positive: true, value: 2.2 },
+      { name: "Critical Damage", positive: true, value: 101.3 },
+      { name: "Attack Speed", positive: true, value: 61.8 },
+      { name: "Impact", positive: false, value: 107.7 },
+    ];
     const buffsOnly = maxRank.filter((stat) => stat.positive);
 
     const whole = gradeRiven("Wolf Sledge", maxRank)!;
     const dropped = gradeRiven("Wolf Sledge", buffsOnly)!;
 
-    expect(dropped.stats.map((s) => s.grade)).toEqual(
-      whole.stats.filter((s) => s.positive).map((s) => s.grade),
-    );
+    expect(whole.stats.every((s) => s.grade !== "?")).toBe(true);
+    expect(dropped.stats.every((s) => s.grade === "?")).toBe(true);
   });
 
-  it("leaves a card that cannot fit any rank at the bottom", () => {
+  it("leaves a card that cannot fit any rank ungraded", () => {
     const impossible = UNRANKED_WOLF_SLEDGE.map((stat) => ({ ...stat, value: stat.value * 90 }));
 
     const result = gradeRiven("Wolf Sledge", impossible);
 
     expect(result).not.toBeNull();
-    expect(result!.stats.every((s) => s.rollFloat === 0 || s.rollFloat === 1)).toBe(true);
+    expect(result!.stats.every((s) => s.grade === "?")).toBe(true);
+    expect(result!.overallGrade).toBe("?");
   });
 });
 
 describe("a stated rank", () => {
-  // A rank-0 Boar roll as warframe.market lists it - 228 of the 500 live Boar
-  // auctions are unranked, and their values are a ninth of the rank-8 card.
+  // Independently rounded rank-0 and rank-8 values from the current calculator.
   const RANK_0_BOAR = [
-    { name: "Critical Chance", positive: true, value: 17.2 },
-    { name: "Multishot", positive: true, value: 22.6 },
-    { name: "Ammo Maximum", positive: false, value: 7.2 },
+    { name: "Critical Chance", positive: true, value: 14.9 },
+    { name: "Multishot", positive: true, value: 19.8 },
+    { name: "Ammo Maximum", positive: false, value: 5.9 },
   ];
-  const RANK_8_BOAR = RANK_0_BOAR.map((stat) => ({
-    ...stat,
-    value: Math.round(stat.value * 9 * 10) / 10,
-  }));
+  const RANK_8_BOAR = [
+    { name: "Critical Chance", positive: true, value: 133.7 },
+    { name: "Multishot", positive: true, value: 177.8 },
+    { name: "Ammo Maximum", positive: false, value: 53.5 },
+  ];
 
-  it("grades a rank-0 card exactly like its rank-8 twin", () => {
+  it("accounts for display rounding at the card's stated rank", () => {
     const stated = gradeRiven("Boar", RANK_0_BOAR, 0)!;
     const maxRank = gradeRiven("Boar", RANK_8_BOAR, 8)!;
 
     expect(stated.stats.every((s) => s.rollFloat > 0 && s.rollFloat < 1)).toBe(true);
-    expect(stated.stats.map((s) => s.grade)).toEqual(maxRank.stats.map((s) => s.grade));
+    expect(stated.stats.map((s) => s.grade)).toEqual(["B", "B", "B- / B"]);
+    expect(maxRank.stats.map((s) => s.grade)).toEqual(["B", "B", "B"]);
     expect(stated.overallGrade).toBe(maxRank.overallGrade);
   });
 
-  it("falls back to the search when the stated rank leaves every buff clamped", () => {
+  it("honors a stated rank even when the values contradict it", () => {
     const searched = gradeRiven("Boar", RANK_8_BOAR)!;
     const asRank0 = gradeRiven("Boar", RANK_8_BOAR, 0)!;
 
-    expect(asRank0.stats.map((s) => s.grade)).toEqual(searched.stats.map((s) => s.grade));
-    expect(asRank0.overallGrade).toBe(searched.overallGrade);
-    expect(asRank0.stats.every((s) => s.rollFloat === 0 || s.rollFloat === 1)).toBe(false);
+    expect(searched.stats.every((s) => s.grade !== "?")).toBe(true);
+    expect(asRank0.stats.every((s) => s.grade === "?")).toBe(true);
+    expect(asRank0.overallGrade).toBe("?");
   });
 
   it("prefers the stated rank over the rank the search would pick", () => {
-    const oneStat = RANK_0_BOAR.slice(0, 1);
-    const stated = gradeRiven("Boar", oneStat, 0)!;
-    const searched = gradeRiven("Boar", oneStat)!;
+    const oneValue = RANK_0_BOAR.map((s, i) => ({ ...s, value: i === 0 ? s.value : null }));
+    const stated = gradeRiven("Boar", oneValue, 0)!;
+    const searched = gradeRiven("Boar", oneValue)!;
 
     expect(stated.stats[0].rollFloat).toBeGreaterThan(0);
     expect(stated.stats[0].rollFloat).toBeLessThan(1);
-    expect(searched.stats[0].rollFloat).toBe(0);
+    expect(searched.stats[0].grade).toBe("?");
   });
 
   it("still searches the rank for a caller that cannot state one", () => {

@@ -5,6 +5,7 @@ import { OVERLAY_CONTENT_VISIBLE } from "../../config/shared/ipcChannels";
 import { REWARD_OVERLAY_CANVAS } from "../../config/shared/rewardOverlayLayout";
 import {
   isNativeWayland as linuxIsNativeWayland,
+  isWaylandSession as linuxIsWaylandSession,
   isTilingCompositor as linuxIsTilingCompositor,
 } from "../../services/linuxDisplayBackend";
 import {
@@ -132,6 +133,7 @@ type OverlayWindowsControllerOptions = {
   canRaise?: () => boolean;
   platform?: NodeJS.Platform;
   isNativeWayland?: () => boolean;
+  isWaylandSession?: () => boolean;
   isTilingCompositor?: () => boolean;
   placeOnGameOutput?: (title: string, output: string | null) => Promise<boolean>;
   createPresentation?: (
@@ -225,6 +227,7 @@ export function createOverlayWindowsController(options: OverlayWindowsController
     canRaise = () => true,
     platform = process.platform,
     isNativeWayland = linuxIsNativeWayland,
+    isWaylandSession = linuxIsWaylandSession,
     isTilingCompositor = linuxIsTilingCompositor,
     placeOnGameOutput = placeWindowOnGameOutput,
     createPresentation = defaultPresentationFactory,
@@ -641,7 +644,7 @@ export function createOverlayWindowsController(options: OverlayWindowsController
 
   /** Wayland has no stacking to re-assert; Windows still needs it for the first map. */
   function raiseReassertPointless(): boolean {
-    return isKeepMappedActive() && platform === "linux";
+    return isLayerMode() || (isKeepMappedActive() && platform === "linux");
   }
 
   function showLayerSurface(): void {
@@ -653,7 +656,9 @@ export function createOverlayWindowsController(options: OverlayWindowsController
   }
 
   function layerModeAllowed(): boolean {
-    return platform === "linux" && isNativeWayland();
+    // The addon owns its Wayland connection, even when Electron uses X11.
+    // X11 input shapes and stacking are unreliable above native Wayland games.
+    return platform === "linux" && (isNativeWayland() || isWaylandSession());
   }
 
   function layerWantsInput(): boolean {
@@ -886,7 +891,7 @@ export function createOverlayWindowsController(options: OverlayWindowsController
         createdWindow,
         () => applyClickThrough(createdWindow),
         {
-          skip: readInteractiveMode,
+          skip: () => isLayerMode() || readInteractiveMode(),
           onFirstPass: () =>
             log.info(`[OverlayWindow] ${windowLabel} click-through re-asserted after map`),
         },
@@ -1117,7 +1122,7 @@ export function createOverlayWindowsController(options: OverlayWindowsController
     const visible = isOverlayWindowVisible();
 
     if (isLayerMode()) {
-      layer?.setInteractive(layerWantsInput());
+      layer?.setInteractive(layerWantsInput(), interactive);
       if (lastAppliedInteractive !== interactive) {
         lastAppliedInteractive = interactive;
         log.info(

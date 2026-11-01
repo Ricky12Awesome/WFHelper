@@ -1666,12 +1666,12 @@ static napi_value OutputRects(napi_env env, napi_callback_info info) {
   return list;
 }
 
-// setInteractive(handle, boolean) -> boolean. Swaps the input region between the
-// whole surface and nothing. Keyboard interactivity stays NONE either way, so a
-// clickable overlay still never takes keyboard focus off the game.
+// setInteractive(handle, boolean, focus) -> boolean. Explicit interaction takes
+// focus to release a fullscreen game's pointer lock. Always-clickable panels
+// accept mouse input without taking focus just because they appeared.
 static napi_value SetInteractive(napi_env env, napi_callback_info info) {
-  size_t argc = 2;
-  napi_value argv[2];
+  size_t argc = 3;
+  napi_value argv[3];
   napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
 
   napi_value no, yes;
@@ -1685,6 +1685,11 @@ static napi_value SetInteractive(napi_env env, napi_callback_info info) {
   if (!win || win->closed) return no;
   bool wanted = false;
   napi_get_value_bool(env, argv[1], &wanted);
+  bool focus = false;
+  if (argc > 2) napi_get_value_bool(env, argv[2], &focus);
+  zwlr_layer_surface_v1_set_keyboard_interactivity(
+      win->layer, wanted && focus ? ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_EXCLUSIVE
+                                 : ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE);
   if (wanted) {
     // A null region means the whole surface accepts input.
     wl_surface_set_input_region(win->surface, NULL);

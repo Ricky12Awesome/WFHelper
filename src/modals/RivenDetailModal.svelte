@@ -431,16 +431,13 @@
                   >{stat.name}</span
                 >
               </div>
-              {#if stat.grade}
+              {#if stat.grade && stat.grade !== "?"}
                 <div class="w-[100px] h-[6px] bg-bg-raised rounded-[3px] shrink-0 overflow-hidden">
                   <div
                     class="h-full rounded-sm transition-[width] duration-300 {stat.positive
                       ? 'bg-success'
                       : 'bg-danger'}"
-                    style="width: {Math.min(
-                      (stat.positive ? stat.rollFloat : 1 - stat.rollFloat) * 100,
-                      100,
-                    )}%"
+                    style="width: {Math.max(0, Math.min(stat.rollFloat * 100, 100))}%"
                   ></div>
                 </div>
                 <span

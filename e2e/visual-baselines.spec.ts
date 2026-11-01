@@ -35,6 +35,7 @@ test("Settings, feedback and overlay previews keep their reviewed appearance", a
       animations: "disabled",
       maxDiffPixelRatio: 0.005,
     });
+    await page.locator("#sidebar [data-sidebar-tools-toggle]").click();
     await page.locator("#sidebar [data-feedback-open]").click();
     const modal = page.locator("[data-feedback-modal]");
     await expect(modal).toBeVisible();

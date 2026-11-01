@@ -21,6 +21,14 @@ import type {
 
 const ocrHealth = vi.hoisted(() => ({ available: true, reason: null as string | null }));
 
+// These tests exercise window presentation; native layer surfaces have their
+// own suite and must not become available merely because the addon was built.
+vi.mock("../../services/layerShell", async (original) => ({
+  ...(await original<typeof import("../../services/layerShell")>()),
+  probeLayerShell: () => null,
+}));
+vi.mock("../../services/gameOutput", () => ({ resolveOutputForGame: async () => null }));
+
 vi.mock("../../services/ocrServer", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../services/ocrServer")>()),
   getWindowsOcrHealth: () => ({ ...ocrHealth }),
@@ -304,6 +312,7 @@ describe("first-load zoom", () => {
 function createPresentationProbe(options: {
   platform: typeof process.platform;
   nativeWayland: boolean;
+  waylandSession?: boolean;
   transparent?: boolean;
   neverClickThrough?: boolean;
   tiling?: boolean;
@@ -411,6 +420,7 @@ function createPresentationProbe(options: {
     neverClickThrough: options.neverClickThrough === true,
     platform: options.platform,
     isNativeWayland: () => options.nativeWayland,
+    isWaylandSession: () => options.waylandSession ?? options.nativeWayland,
     isTilingCompositor: () => options.tiling === true,
     windowTitle: options.windowTitle,
     placeOnGameOutput: options.placeOnGameOutput,
@@ -2118,12 +2128,17 @@ describe("layer-shell presentation", () => {
     };
   }
 
-  function probeWithLayer(nativeWayland: boolean, platform: typeof process.platform = "linux") {
+  function probeWithLayer(
+    nativeWayland: boolean,
+    platform: typeof process.platform = "linux",
+    waylandSession?: boolean,
+  ) {
     const presentation = fakePresentation();
     const createPresentation = vi.fn(() => presentation);
     const probe = createPresentationProbe({
       platform,
       nativeWayland,
+      waylandSession,
       createPresentation,
       windowTitle: "WFHelper Relic Rewards",
     });
@@ -2173,7 +2188,7 @@ describe("layer-shell presentation", () => {
 
     probe.controller.setOverlayInteractiveMode(true);
 
-    expect(probe.presentation.setInteractive).toHaveBeenLastCalledWith(true);
+    expect(probe.presentation.setInteractive).toHaveBeenLastCalledWith(true, true);
     expect(probe.windows).toHaveLength(built);
     expect(probe.windows[0].options.webPreferences.offscreen).toBe(true);
   });
@@ -2185,7 +2200,7 @@ describe("layer-shell presentation", () => {
 
     probe.controller.setOverlayInteractiveMode(false);
 
-    expect(probe.presentation.setInteractive).toHaveBeenLastCalledWith(false);
+    expect(probe.presentation.setInteractive).toHaveBeenLastCalledWith(false, false);
     expect(probe.windows[0].setFocusable).not.toHaveBeenCalled();
   });
 
@@ -2199,7 +2214,7 @@ describe("layer-shell presentation", () => {
     expect(probe.windows[0].options.webPreferences.offscreen).toBe(true);
   });
 
-  it("gives a never-click-through overlay an input region straight away", () => {
+  it("gives a never-click-through overlay passive input without focus", () => {
     const presentation = fakePresentation();
     const probe = createPresentationProbe({
       platform: "linux",
@@ -2210,7 +2225,7 @@ describe("layer-shell presentation", () => {
 
     probe.controller.createOverlayWindow();
 
-    expect(presentation.setInteractive).toHaveBeenLastCalledWith(true);
+    expect(presentation.setInteractive).toHaveBeenLastCalledWith(true, false);
   });
 
   it("leaves an ordinary overlay click-through until asked", () => {
@@ -2218,7 +2233,7 @@ describe("layer-shell presentation", () => {
 
     probe.controller.createOverlayWindow();
 
-    expect(probe.presentation.setInteractive).toHaveBeenLastCalledWith(false);
+    expect(probe.presentation.setInteractive).toHaveBeenLastCalledWith(false, false);
   });
 
   it("drags a layer surface by rewriting the saved spot", () => {
@@ -2276,14 +2291,37 @@ describe("layer-shell presentation", () => {
     expect(probe.windows[0].on.mock.calls.filter(([event]) => event === "resize")).toHaveLength(1);
   });
 
-  it("is never built on XWayland or off linux", () => {
-    const onXWayland = probeWithLayer(false);
-    onXWayland.controller.createOverlayWindow();
-    const onWindows = probeWithLayer(false, "win32");
+  it("is not built on plain X11 or Windows", () => {
+    const onX11 = probeWithLayer(false, "linux", false);
+    onX11.controller.createOverlayWindow();
+    const onWindows = probeWithLayer(false, "win32", false);
     onWindows.controller.createOverlayWindow();
 
-    expect(onXWayland.createPresentation).not.toHaveBeenCalled();
+    expect(onX11.createPresentation).not.toHaveBeenCalled();
     expect(onWindows.createPresentation).not.toHaveBeenCalled();
+  });
+
+  it("uses the layer surface in an XWayland app on a Wayland session", async () => {
+    vi.useFakeTimers();
+    try {
+      const probe = probeWithLayer(false, "linux", true);
+      probe.controller.createOverlayWindow();
+      const win = probe.windows[0];
+
+      expect(win.options.webPreferences.offscreen).toBe(true);
+      expect(probe.presentation.show).toHaveBeenCalled();
+      probe.controller.markRendererReady(1);
+      probe.controller.setOverlayInteractiveMode(true);
+      expect(probe.presentation.setInteractive).toHaveBeenLastCalledWith(true, true);
+      expect(probe.windows).toHaveLength(1);
+
+      await vi.advanceTimersByTimeAsync(3_000);
+      expect(win.setIgnoreMouseEvents).not.toHaveBeenCalled();
+      expect(win.moveTop).not.toHaveBeenCalled();
+      expect(win.setAlwaysOnTop).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("keeps the window path when no layer shell is available", () => {

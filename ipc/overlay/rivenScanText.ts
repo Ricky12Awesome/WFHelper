@@ -41,6 +41,16 @@ const RIVEN_STAT_ALIAS_REPLACEMENTS: ReadonlyArray<[RegExp, string]> = Object.fr
 ]);
 
 const KNOWN_RIVEN_STATS: ReadonlyArray<string> = Object.freeze([
+  "Heavy Attack Wind Up Speed",
+  "Melee Damage On Heavy Attack",
+  "Reload While Holstered",
+  "Weak Point Critical Chance",
+  "Slam Attack Damage",
+  "Damage to Orokin",
+  "Damage to Scaldra",
+  "Damage to Techrot",
+  "Status Damage",
+  "Parry Angle",
   "Additional Combo Count Chance",
   "Chance to Gain Combo Count",
   "Critical Chance for Slide Attack",
@@ -51,6 +61,7 @@ const KNOWN_RIVEN_STATS: ReadonlyArray<string> = Object.freeze([
   "Damage to Infested",
   "Critical Chance",
   "Critical Damage",
+  "Weak Point Damage",
   "Finisher Damage",
   "Melee Damage",
   "Weapon Recoil",
@@ -65,6 +76,7 @@ const KNOWN_RIVEN_STATS: ReadonlyArray<string> = Object.freeze([
   "Combo Duration",
   "Initial Combo",
   "Ammo Maximum",
+  "Ammo Efficiency",
   "Heavy Attack",
   "Channeling Damage",
   "Channeling Efficiency",
@@ -129,6 +141,7 @@ const SIGNED_VALUE = new RegExp(String.raw`[+\-\u2013]\s*(\d+\.?\d*)` + NUMBER_E
 
 function preprocessOcrText(raw: string): string {
   let text = raw.replace(TRAIT_LOCK_TAIL, "$1");
+  text = text.replace(/\bWeakpoint\b/gi, "Weak Point");
   // The padlock leading a locked stat can read as a digit ("8 +99,5%"); glued to a
   // multiplier, "8x1,51" collapsed to "81.51" and the stat lost its value.
   text = text.replace(/^\d(?=x\s*\d)/gim, "");
@@ -136,8 +149,10 @@ function preprocessOcrText(raw: string): string {
   // Colored stat icons make WinRT split two-word names; rejoin before other repairs.
   text = text.replace(/\bFinisher\s*\n+\s*(?=Damage\b)/gi, "Finisher ");
   text = text.replace(/\bMelee\s*\n+\s*(?=Damage\b)/gi, "Melee ");
+  text = text.replace(/\bWeak\s*\n+\s*(?=Point\b)/gi, "Weak ");
+  text = text.replace(/\bWeak Point\s*\n+\s*(?=(?:Damage|Critical)\b)/gi, "Weak Point ");
   text = text.replace(/\bCritical?\s*\n+\s*(?=(?:Chance|Damage)\b)/gi, "Critical ");
-  text = text.replace(/\bStatus\s*\n+\s*(?=(?:Chance|Duration)\b)/gi, "Status ");
+  text = text.replace(/\bStatus\s*\n+\s*(?=(?:Chance|Duration|Damage)\b)/gi, "Status ");
   text = text.replace(/\bAttack\s*\n+\s*(?=Speed\b)/gi, "Attack ");
   text = text.replace(/\bReload\s*\n+\s*(?=Speed\b)/gi, "Reload ");
   text = text.replace(/\bFlight\s*\n+\s*(?=Speed\b)/gi, "Flight ");
@@ -147,7 +162,7 @@ function preprocessOcrText(raw: string): string {
   // second line of "Additional Combo / Count Chance" as ". Count Chance".
   text = text.replace(/\bCombo\s*\n+[^\w\n]*(?=(?:Duration|Count)\b)/gi, "Combo ");
   text = text.replace(/\bAdditional\s*\n+\s*(?=Combo\b)/gi, "Additional ");
-  text = text.replace(/\bAmmo\s*\n+\s*(?=Maximum\b)/gi, "Ammo ");
+  text = text.replace(/\bAmmo\s*\n+\s*(?=(?:Maximum|Eff?iciency)\b)/gi, "Ammo ");
   text = text.replace(/\bPunch\s*\n+\s*(?=Through\b)/gi, "Punch ");
   text = text.replace(/\bChanneling\s*\n+\s*(?=(?:Damage|Efficiency)\b)/gi, "Channeling ");
   text = text.replace(/\bWeapon\s*\n+\s*(?=Recoil\b)/gi, "Weapon ");

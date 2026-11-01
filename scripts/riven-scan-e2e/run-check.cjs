@@ -17,6 +17,18 @@ const EXPECTED_STATS = [
 // Saved card crops, put back into a frame of the size they were cropped from.
 const CARD_FIXTURES = [
   {
+    name: "initial-bramma-ammo-efficiency",
+    file: "initial-card-bramma-ammo-efficiency.png",
+    frame: { width: 2000, height: 1125 },
+    crop: "singleCard",
+    grading: { weapon: "Kuva Bramma", grades: ["B", "S", "B"], overall: "A-" },
+    expected: [
+      { name: "Critical Chance", value: 223.8, positive: true, displayPositive: true },
+      { name: "Ammo Efficiency", value: 73.3, positive: true, displayPositive: true },
+      { name: "Weapon Recoil", value: 54.1, positive: false, displayPositive: true },
+    ],
+  },
+  {
     name: "roll-corufell-trait-locked",
     file: "roll-card-corufell-trait-locked.png",
     frame: { width: 1920, height: 1080 },
@@ -132,6 +144,14 @@ async function main() {
             rollReveal: fixture.crop === "rollCard",
             label: `acceptance-${fixture.name}`,
           });
+          if (fixture.grading) {
+            const { gradeRiven } = load("services/rivenGrading");
+            output.fixtures[fixture.name].grading = gradeRiven(
+              fixture.grading.weapon,
+              output.fixtures[fixture.name].stats,
+              8,
+            );
+          }
         }
         return output;
       },
@@ -164,6 +184,13 @@ async function main() {
         displayPositive: stat.displayPositive ?? stat.positive,
       }));
       assert.deepEqual(stats, fixture.expected, `${fixture.name}: stats changed`);
+      if (fixture.grading) {
+        assert.deepEqual(
+          card.grading.stats.map((stat) => stat.grade),
+          fixture.grading.grades,
+        );
+        assert.equal(card.grading.overallGrade, fixture.grading.overall);
+      }
       console.log(`PASS ${fixture.name}: all ${fixture.expected.length} stats and signs`);
     }
     await closeNativeElectron(app);

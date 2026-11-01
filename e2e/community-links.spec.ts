@@ -30,6 +30,8 @@ test.describe("community links", () => {
 
     // Both sit below the Feedback button, which is what the row is anchored to.
     const feedback = sidebar.locator("[data-feedback-open]");
+    await sidebar.locator("[data-sidebar-tools-toggle]").click();
+    await expect(feedback).toBeVisible();
     const feedbackBox = await feedback.boundingBox();
     const discordBox = await discord.boundingBox();
     const patreonBox = await patreon.boundingBox();

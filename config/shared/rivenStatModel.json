@@ -1,0 +1,747 @@
+{
+  "source": "https://tome-wyrm.github.io/riven-calculator-site/",
+  "commit": "3a1bfa28688ee8f636ff78581e93832759e3e33a",
+  "retrieved": "2026-10-28",
+  "stats": [
+    {
+      "id": "damage",
+      "name": "Damage",
+      "prefix": "Visi",
+      "suffix": "Ata",
+      "b": {
+        "rifle": 0.0183333,
+        "shotgun": 0.0183,
+        "pistol": 0.0244,
+        "archgun": 0.0111,
+        "melee": 0.0183
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false,
+      "meleeName": "Melee Damage"
+    },
+    {
+      "id": "cold",
+      "name": "Cold",
+      "prefix": "Geli",
+      "suffix": "Do",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.0133,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": false
+    },
+    {
+      "id": "electricity",
+      "name": "Electricity",
+      "prefix": "Vexi",
+      "suffix": "Tio",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.0133,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": false
+    },
+    {
+      "id": "heat",
+      "name": "Heat",
+      "prefix": "Igni",
+      "suffix": "Pha",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.0133,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": false
+    },
+    {
+      "id": "toxin",
+      "name": "Toxin",
+      "prefix": "Toxi",
+      "suffix": "Tox",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.0133,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": false
+    },
+    {
+      "id": "impact",
+      "name": "Impact",
+      "prefix": "Magna",
+      "suffix": "Ton",
+      "b": {
+        "rifle": 0.013333,
+        "shotgun": 0.013333,
+        "pistol": 0.013333,
+        "archgun": 0.01,
+        "melee": 0.0133
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "puncture",
+      "name": "Puncture",
+      "prefix": "Insi",
+      "suffix": "Cak",
+      "b": {
+        "rifle": 0.01333,
+        "shotgun": 0.01333,
+        "pistol": 0.01333,
+        "archgun": 0.01,
+        "melee": 0.0133
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "slash",
+      "name": "Slash",
+      "prefix": "Sci",
+      "suffix": "Sus",
+      "b": {
+        "rifle": 0.013333,
+        "shotgun": 0.013333,
+        "pistol": 0.013333,
+        "archgun": 0.01,
+        "melee": 0.0133
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "corpus",
+      "name": "Damage to Corpus",
+      "prefix": "Manti",
+      "suffix": "Tron",
+      "b": {
+        "rifle": 0.005,
+        "shotgun": 0.005,
+        "pistol": 0.005,
+        "archgun": 0.005,
+        "melee": 0.005
+      },
+      "unit": "mult",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "grineer",
+      "name": "Damage to Grineer",
+      "prefix": "Argi",
+      "suffix": "Con",
+      "b": {
+        "rifle": 0.005,
+        "shotgun": 0.005,
+        "pistol": 0.005,
+        "archgun": 0.005,
+        "melee": 0.005
+      },
+      "unit": "mult",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "infested",
+      "name": "Damage to Infested",
+      "prefix": "Pura",
+      "suffix": "Ada",
+      "b": {
+        "rifle": 0.005,
+        "shotgun": 0.005,
+        "pistol": 0.005,
+        "archgun": 0.005,
+        "melee": 0.005
+      },
+      "unit": "mult",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "additionalCombo",
+      "name": "Additional Combo Count Chance",
+      "prefix": "Laci",
+      "suffix": "Nus",
+      "b": {
+        "melee": 0.00653
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": false
+    },
+    {
+      "id": "ammoMax",
+      "name": "Ammo Maximum",
+      "prefix": "Ampi",
+      "suffix": "Bin",
+      "b": {
+        "rifle": 0.00555,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.0111
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "chanceToGainCombo",
+      "name": "Chance to Gain Combo Count",
+      "prefix": null,
+      "suffix": null,
+      "b": {
+        "melee": -0.01165
+      },
+      "unit": "pctNeg",
+      "polarity": "negOnly",
+      "spliced": false
+    },
+    {
+      "id": "comboDuration",
+      "name": "Combo Duration",
+      "prefix": "Tempi",
+      "suffix": "Nem",
+      "b": {
+        "melee": 0.09
+      },
+      "unit": "sec",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "critChance",
+      "name": "Critical Chance",
+      "prefix": "Crita",
+      "suffix": "Cron",
+      "b": {
+        "rifle": 0.016666,
+        "shotgun": 0.01,
+        "pistol": 0.016666,
+        "archgun": 0.0111,
+        "melee": 0.02
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "slideCrit",
+      "name": "Critical Chance for Slide Attack",
+      "prefix": "Pleci",
+      "suffix": "Nent",
+      "b": {
+        "melee": 0.013334
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "critDamage",
+      "name": "Critical Damage",
+      "prefix": "Acri",
+      "suffix": "Tis",
+      "b": {
+        "rifle": 0.013333,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.0089,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "finisher",
+      "name": "Finisher Damage",
+      "prefix": "Exi",
+      "suffix": "Cta",
+      "b": {
+        "melee": 0.0133
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "fireRate",
+      "name": "Fire Rate",
+      "prefix": "Croni",
+      "suffix": "Dra",
+      "b": {
+        "rifle": 0.00667,
+        "shotgun": 0.01,
+        "pistol": 0.0083,
+        "archgun": 0.00667,
+        "melee": 0.0061
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false,
+      "meleeName": "Attack Speed"
+    },
+    {
+      "id": "heavyEfficiency",
+      "name": "Heavy Attack Efficiency",
+      "prefix": "Forti",
+      "suffix": "Us",
+      "b": {
+        "melee": 0.00816
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "initialCombo",
+      "name": "Initial Combo",
+      "prefix": "Para",
+      "suffix": "Um",
+      "b": {
+        "melee": 0.27224
+      },
+      "unit": "flat",
+      "polarity": "posOnly",
+      "spliced": false
+    },
+    {
+      "id": "magazine",
+      "name": "Magazine Capacity",
+      "prefix": "Arma",
+      "suffix": "Tin",
+      "b": {
+        "rifle": 0.005555,
+        "shotgun": 0.005555,
+        "pistol": 0.005555,
+        "archgun": 0.0067
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "multishot",
+      "name": "Multishot",
+      "prefix": "Sati",
+      "suffix": "Can",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.0133,
+        "pistol": 0.0133,
+        "archgun": 0.0067
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "projectileSpeed",
+      "name": "Projectile Speed",
+      "prefix": "Conci",
+      "suffix": "Nak",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "punchThrough",
+      "name": "Punch Through",
+      "prefix": "Lexi",
+      "suffix": "Nok",
+      "b": {
+        "rifle": 0.03,
+        "shotgun": 0.03,
+        "pistol": 0.03,
+        "archgun": 0.03
+      },
+      "unit": "m",
+      "polarity": "posOnly",
+      "spliced": false
+    },
+    {
+      "id": "range",
+      "name": "Range",
+      "prefix": "Locti",
+      "suffix": "Tor",
+      "b": {
+        "melee": 0.02158
+      },
+      "unit": "m",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "reloadSpeed",
+      "name": "Reload Speed",
+      "prefix": "Feva",
+      "suffix": "Tak",
+      "b": {
+        "rifle": 0.005555,
+        "shotgun": 0.005555,
+        "pistol": 0.005555,
+        "archgun": 0.0111
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "statusChance",
+      "name": "Status Chance",
+      "prefix": "Hexa",
+      "suffix": "Dex",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.0067,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "statusDuration",
+      "name": "Status Duration",
+      "prefix": "Deci",
+      "suffix": "Des",
+      "b": {
+        "rifle": 0.01111,
+        "shotgun": 0.01111,
+        "pistol": 0.01111,
+        "archgun": 0.01111,
+        "melee": 0.01111
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "recoil",
+      "name": "Weapon Recoil",
+      "prefix": "Zeti",
+      "suffix": "Mag",
+      "b": {
+        "rifle": -0.01,
+        "shotgun": -0.01,
+        "pistol": -0.01,
+        "archgun": -0.01
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "zoom",
+      "name": "Zoom",
+      "prefix": "Hera",
+      "suffix": "Lis",
+      "b": {
+        "rifle": 0.006666,
+        "shotgun": 0.004666,
+        "pistol": 0.0089,
+        "archgun": 0.006666
+      },
+      "unit": "pct",
+      "polarity": "both",
+      "spliced": false
+    },
+    {
+      "id": "ammoEfficiency",
+      "name": "Ammo Efficiency",
+      "prefix": "Parci",
+      "suffix": "Pia",
+      "b": {
+        "rifle": -0.005,
+        "shotgun": -0.005,
+        "pistol": -0.005,
+        "archgun": -0.005
+      },
+      "unit": "pctNeg",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "heavyWindup",
+      "name": "Heavy Attack Wind Up Speed",
+      "prefix": "Veri",
+      "suffix": "Lus",
+      "b": {
+        "melee": 0.0133
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "meleeDamageOnHeavy",
+      "name": "Melee Damage On Heavy Attack",
+      "prefix": "Robi",
+      "suffix": "Ndo",
+      "b": {
+        "melee": 0.0133
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "parryAngle",
+      "name": "Parry Angle",
+      "prefix": "Laci",
+      "suffix": "So",
+      "b": {
+        "melee": 0.009
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "reloadWhileHolstered",
+      "name": "Reload While Holstered",
+      "prefix": "Auxi",
+      "suffix": "Rro",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "slamDamage",
+      "name": "Slam Attack Damage",
+      "prefix": "Proci",
+      "suffix": "Lam",
+      "b": {
+        "melee": 0.0133
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "statusDamage",
+      "name": "Status Damage",
+      "prefix": "Plaga",
+      "suffix": "Mna",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.01,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "weakpointDamage",
+      "name": "Weakpoint Damage",
+      "prefix": "Eni",
+      "suffix": "Vo",
+      "b": {
+        "rifle": 0.025,
+        "shotgun": 0.025,
+        "pistol": 0.025,
+        "archgun": 0.025
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "weakpointCrit",
+      "name": "Weakpoint Critical Chance",
+      "prefix": "Exiti",
+      "suffix": "Eus",
+      "b": {
+        "rifle": 0.0275,
+        "shotgun": 0.0275,
+        "pistol": 0.0275,
+        "archgun": 0.0275
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "blast",
+      "name": "Blast",
+      "prefix": "Fraga",
+      "suffix": "Tus",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.01,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "corrosive",
+      "name": "Corrosive",
+      "prefix": "Cori",
+      "suffix": "Or",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.01,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "gas",
+      "name": "Gas",
+      "prefix": "Cali",
+      "suffix": "Fel",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.01,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "magnetic",
+      "name": "Magnetic",
+      "prefix": "Magni",
+      "suffix": "Bra",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.01,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "radiation",
+      "name": "Radiation",
+      "prefix": "Radi",
+      "suffix": "Lo",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.01,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "viral",
+      "name": "Viral",
+      "prefix": "Cari",
+      "suffix": "Sco",
+      "b": {
+        "rifle": 0.01,
+        "shotgun": 0.01,
+        "pistol": 0.01,
+        "archgun": 0.01,
+        "melee": 0.01
+      },
+      "unit": "pct",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "orokin",
+      "name": "Damage to Orokin",
+      "prefix": "Effi",
+      "suffix": "Tas",
+      "b": {
+        "rifle": 0.005,
+        "shotgun": 0.005,
+        "pistol": 0.005,
+        "archgun": 0.005,
+        "melee": 0.005
+      },
+      "unit": "mult",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "scaldra",
+      "name": "Damage to Scaldra",
+      "prefix": "Exsi",
+      "suffix": "Llo",
+      "b": {
+        "rifle": 0.005,
+        "shotgun": 0.005,
+        "pistol": 0.005,
+        "archgun": 0.005,
+        "melee": 0.005
+      },
+      "unit": "mult",
+      "polarity": "posOnly",
+      "spliced": true
+    },
+    {
+      "id": "techrot",
+      "name": "Damage to Techrot",
+      "prefix": "Muti",
+      "suffix": "Gia",
+      "b": {
+        "rifle": 0.005,
+        "shotgun": 0.005,
+        "pistol": 0.005,
+        "archgun": 0.005,
+        "melee": 0.005
+      },
+      "unit": "mult",
+      "polarity": "posOnly",
+      "spliced": true
+    }
+  ]
+}

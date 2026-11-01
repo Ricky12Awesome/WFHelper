@@ -6,10 +6,10 @@ import { layerOutputRects, layerToplevels } from "./layerShell";
 import type { WaylandToplevel } from "./layerShell";
 import { niriGameFocusSync, niriWindowBounds } from "./niriIpc";
 import type { WindowBounds } from "./warframeStatus";
-import { pickWarframeWindow } from "./waylandCompositor";
+import { compositorGameRect, pickWarframeWindow } from "./waylandCompositor";
 
 interface WaylandGameBounds extends WindowBounds {
-  source: "foreign-toplevel" | "niri";
+  source: "foreign-toplevel" | "niri" | "compositor";
 }
 
 function isWaylandSession(): boolean {
@@ -63,6 +63,8 @@ function fullscreenOutputBounds(): WaylandGameBounds | null {
 
 export async function waylandGameBounds(): Promise<WaylandGameBounds | null> {
   if (!isWaylandSession()) return null;
+  const fromCompositor = await compositorGameRect();
+  if (fromCompositor) return { ...fromCompositor.rect, source: "compositor" };
   const fromToplevel = fullscreenOutputBounds();
   if (fromToplevel) return fromToplevel;
 

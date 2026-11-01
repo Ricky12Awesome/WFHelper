@@ -153,6 +153,12 @@ export function isNativeWayland(): boolean {
   return _waylandSession && _active !== "x11";
 }
 
+/** The compositor session, independent of Electron's X11 or Wayland windows.
+ *  The native addon opens its own connection and works with either backend. */
+export function isWaylandSession(): boolean {
+  return _waylandSession;
+}
+
 /** The screen comes straight from a compositor that offers screen copy, once the
  *  startup probe found it. The addon opens its own Wayland connection, so this
  *  holds in XWayland mode too. */

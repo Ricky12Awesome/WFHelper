@@ -10,6 +10,7 @@ import {
 } from "@playwright/test";
 
 import {
+  RIVEN_GRADING_ROLL,
   RIVEN_ROLL_RESULT,
   RIVEN_SIMILAR_LISTINGS,
   RIVENS_SEARCH_AUCTIONS,
@@ -29,9 +30,9 @@ function similarListing(id: string, isDirectSell: boolean) {
     sellerStatus: "ingame",
     platinum: isDirectSell ? 200 : 90,
     stats: [
-      { name: "Critical Damage", value: 110, positive: true },
-      { name: "Multishot", value: 80, positive: true },
-      { name: "Zoom", value: -30, positive: false },
+      { name: "Critical Damage", value: 133.7, positive: true },
+      { name: "Multishot", value: 177.8, positive: true },
+      { name: "Zoom", value: -47.6, positive: false },
     ],
     rerolls: 5,
     startingPrice: isDirectSell ? null : 90,
@@ -86,9 +87,9 @@ function fixtureOrders() {
     buy: [],
     contracts: [
       contract(GRADED_ID, "akstiletto", [
-        attribute("critical_damage", "Critical Damage", 120.5, true),
-        attribute("multishot", "Multishot", 88.2, true),
-        attribute("zoom", "Zoom", -31.4, false),
+        attribute("critical_damage", "Critical Damage", 133.7, true),
+        attribute("multishot", "Multishot", 177.8, true),
+        attribute("zoom", "Zoom", -47.6, false),
       ]),
       contract(UNKNOWN_ID, "zzz_not_a_weapon", [
         attribute("critical_chance", "Critical Chance", 100, true),
@@ -149,7 +150,7 @@ test.describe("Market riven contract grades (fixture mode)", () => {
   test("a listed riven shows the roll grade main computed for it", async () => {
     const badges = page.locator(`[data-contract-grade="${GRADED_ID}"]`);
     await expect(badges).toBeVisible({ timeout: 30_000 });
-    await expect(badges.locator("[data-riven-grade]")).toHaveText(/^[SABCF][+-]?$/);
+    await expect(badges.locator("[data-riven-grade]")).toHaveText("B");
     await expect(badges.locator("[data-riven-attr-grade]")).toHaveCount(1);
   });
 
@@ -170,6 +171,7 @@ test.describe("Market riven contract grades (fixture mode)", () => {
     await expect(modalGrade).toBeVisible({ timeout: 20_000 });
     await expect(modalGrade).toHaveText(String(rowGrade));
     await expect(page.locator("[data-riven-stat-grade]")).toHaveCount(3);
+    await expect(page.locator("[data-riven-stat-grade]")).toHaveText(["B", "B", "B"]);
     await page.keyboard.press("Escape");
   });
 
@@ -193,7 +195,7 @@ test.describe("Market riven contract grades (fixture mode)", () => {
     await expect(cards).toHaveCount(3, { timeout: 20_000 });
     await expect(chip).toHaveAttribute("aria-pressed", "true");
     await expect(auctionCard).toHaveCount(1);
-    await expect(auctionCard).toContainText("−30% Zoom");
+    await expect(auctionCard).toContainText("−48% Zoom");
     await chip.scrollIntoViewIfNeeded();
     await page.screenshot({
       animations: "disabled",
@@ -277,9 +279,9 @@ test.describe("Market riven contract grades (fixture mode)", () => {
         { channel: RIVENS_SEARCH_AUCTIONS, listings },
       );
     const rolled = [
-      { name: "Critical Damage", value: 120.5, positive: true },
-      { name: "Multishot", value: 88.2, positive: true },
-      { name: "Zoom", value: 31.4, positive: false },
+      { name: "Critical Damage", value: 133.7, positive: true },
+      { name: "Multishot", value: 177.8, positive: true },
+      { name: "Zoom", value: 47.6, positive: false },
     ];
 
     await serveListings(SIMILAR_LISTINGS);
@@ -308,9 +310,9 @@ test.describe("Market riven contract grades (fixture mode)", () => {
       await expect(auction(win)).toHaveCount(1);
     }
     await expect(auction(left).locator(".listing-stat-value")).toHaveText([
-      "+110%",
-      "+80%",
-      "−30%",
+      "+134%",
+      "+178%",
+      "−48%",
     ]);
     await shoot(left, "riven-overlay-auctions-on.png");
 
@@ -367,5 +369,51 @@ test.describe("Market riven contract grades (fixture mode)", () => {
     await expect(setting).toBeChecked();
 
     await callRivenOverlay("onRivenSessionClose");
+  });
+
+  test("the Bramma overlay displays the calculator's B, S, B grades and magnitude bars", async () => {
+    await evaluateInMain(app, ({ app: electronApp }) => {
+      const load = (file: string) =>
+        process.mainModule!.require(`${electronApp.getAppPath()}/.electron-build/${file}`);
+      load("ipc/overlay/rivenScan").scanInitialCard = () => new Promise(() => {});
+      load("ipc/rivenOverlayIpc").onRivenSessionOpen();
+    });
+    await expect
+      .poll(() => app.windows().some((win) => win.url().includes("side=left")))
+      .toBe(true);
+    const left = app.windows().find((win) => win.url().includes("side=left"))!;
+    await expect(left.locator("#weapon-name")).toHaveText("Riven");
+    await evaluateInMain(
+      app,
+      ({ app: electronApp, BrowserWindow }, channels) => {
+        const { gradeRiven } = process.mainModule!.require(
+          `${electronApp.getAppPath()}/.electron-build/services/rivenGrading`,
+        ) as typeof import("../services/rivenGrading");
+        const stats = [
+          { name: "Critical Chance", positive: true, value: 223.8 },
+          { name: "Ammo Efficiency", positive: true, value: 73.3 },
+          { name: "Weapon Recoil", positive: false, displayPositive: true, value: 54.1 },
+        ];
+        const graded = gradeRiven("Kuva Bramma", stats, 8);
+        for (const win of BrowserWindow.getAllWindows()) {
+          if (!win.webContents.getURL().includes("riven-overlay.html")) continue;
+          win.webContents.send(channels.result, { rollCount: 1, left: stats, right: stats });
+          win.webContents.send(channels.grading, { left: graded, right: graded });
+        }
+      },
+      { result: RIVEN_ROLL_RESULT, grading: RIVEN_GRADING_ROLL },
+    );
+    await expect(left.locator(".stat-grade")).toHaveText(["B", "S", "B"]);
+    await expect(left.locator(".stat-negative .stat-value")).toHaveText("+54.1%");
+    expect(
+      await left
+        .locator(".roll-bar-fill")
+        .evaluateAll((bars) => bars.map((bar) => (bar as HTMLElement).style.width)),
+    ).toEqual(["52%", "98%", "56%"]);
+    await evaluateInMain(app, ({ app: electronApp }) => {
+      process
+        .mainModule!.require(`${electronApp.getAppPath()}/.electron-build/ipc/rivenOverlayIpc`)
+        .onRivenSessionClose();
+    });
   });
 });

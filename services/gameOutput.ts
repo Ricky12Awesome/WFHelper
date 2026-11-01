@@ -1,17 +1,17 @@
 // Which monitor holds the game, for overlays placed on it and for the screen
 // copy that captures it.
 
-import { layerOutputRects } from "./layerShell";
+import { layerOutputRects, layerToplevels } from "./layerShell";
 import { withScope } from "./logger";
-import { getWarframeWindowBoundsLinux } from "./warframeStatus";
-import { resolveGameOutput } from "./waylandCompositor";
+import { getWarframeWindowBoundsLinux, x11PositionDistrust } from "./warframeStatus";
+import { pickWarframeWindow, resolveGameOutput } from "./waylandCompositor";
 
 const outputLog = withScope("layerOutput");
 
-/** Which monitor holds the game, by matching its window against the compositor's
- *  logical layout. XWayland reports geometry in that same space, so this works on
- *  any compositor, unlike the ipc lookup that only niri, sway and Hyprland answer. */
+/** Last resort where no compositor source identifies an output. Satellite's X11
+ *  origin is not a desktop position and must never choose a monitor. */
 async function outputFromGameBounds(): Promise<string | null> {
+  if (x11PositionDistrust()) return null;
   const rects = layerOutputRects().filter((rect) => rect.placed && rect.width > 0);
   // One monitor cannot be the wrong monitor.
   if (rects.length < 2) return null;
@@ -35,9 +35,16 @@ function noteOutputSource(source: string, output: string | null): string | null 
   return output;
 }
 
-/** Measured rect first: the ipc lookup takes the first window titled /warframe/i. */
+/** The compositor sees native Wayland games that X11 cannot. Ask it before X11:
+ *  a browser or Steam window can mention Warframe on an entirely different output. */
 export async function resolveOutputForGame(): Promise<string | null> {
+  const fromCompositor = await resolveGameOutput();
+  if (fromCompositor) return noteOutputSource("compositor ipc", fromCompositor);
+
+  const game = pickWarframeWindow(layerToplevels() ?? []);
+  if (game?.outputs.length === 1) {
+    return noteOutputSource("foreign toplevel", game.outputs[0]);
+  }
   const fromBounds = await outputFromGameBounds();
-  if (fromBounds) return noteOutputSource("the game window rect", fromBounds);
-  return noteOutputSource("compositor ipc", await resolveGameOutput());
+  return noteOutputSource("the game window rect", fromBounds);
 }

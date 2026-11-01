@@ -26,7 +26,7 @@ interface FakeAddon {
 // The loader's own require is the only seam a native addon can be injected
 // through. With nothing injected it falls through to the real require, so the
 // missing- and broken-addon cases still exercise the real failure.
-const injected = vi.hoisted(() => ({ addon: null as unknown }));
+const injected = vi.hoisted(() => ({ addon: null as unknown, failLoad: false }));
 
 vi.mock("node:module", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:module")>();
@@ -34,7 +34,10 @@ vi.mock("node:module", async (importOriginal) => {
     ...actual,
     createRequire: ((filename: string | URL) => {
       const real = actual.createRequire(filename);
-      const shim = (id: string): unknown => (injected.addon ? injected.addon : real(id));
+      const shim = (id: string): unknown => {
+        if (injected.failLoad) throw new Error("addon failed to link");
+        return injected.addon ? injected.addon : real(id);
+      };
       return Object.assign(shim, real);
     }) as typeof actual.createRequire,
   };
@@ -123,6 +126,7 @@ const connectionLostLines = (): unknown[] =>
 afterEach(() => {
   setPlatform(realPlatform);
   injected.addon = null;
+  injected.failLoad = false;
   for (const spy of Object.values(logged)) spy.mockClear();
   vi.restoreAllMocks();
 });
@@ -179,6 +183,7 @@ describe("probeLayerShell", () => {
   // The whole point of the optional addon: a present but broken one is not fatal.
   it("is null when a present addon fails to load", async () => {
     setPlatform("linux");
+    injected.failLoad = true;
     vi.spyOn(fs, "existsSync").mockReturnValue(true);
 
     expect((await freshProbe())()).toBeNull();
@@ -426,6 +431,8 @@ describe("pointer input", () => {
     const toSecond = vi.fn();
     first.setInteractive(true, toFirst);
     second.setInteractive(true, toSecond);
+    expect(addon.setInteractive).toHaveBeenNthCalledWith(1, 0, true, false);
+    expect(addon.setInteractive).toHaveBeenNthCalledWith(2, 1, true, false);
     addon.pollEvents.mockReturnValueOnce([
       { handle: 1, type: 3, x: 7, y: 9, button: 2, pressed: true, dx: 0, dy: 0 },
     ]);
@@ -448,7 +455,9 @@ describe("pointer input", () => {
     const { addon, first } = await openTwo();
     const sink = vi.fn();
     first.setInteractive(true, sink);
+    expect(addon.setInteractive).toHaveBeenLastCalledWith(0, true, false);
     first.setInteractive(false);
+    expect(addon.setInteractive).toHaveBeenLastCalledWith(0, false, false);
     addon.pollEvents.mockReturnValue([
       { handle: 0, type: 2, x: 1, y: 1, button: 0, pressed: false, dx: 0, dy: 0 },
     ]);

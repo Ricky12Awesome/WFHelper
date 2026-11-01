@@ -384,6 +384,7 @@ describe("overlay drag hint", () => {
     state.invokeHandlers.clear();
     register(vi.fn());
     Object.assign(ctx.overlaySettings, { interactionHotkeyEnabled: true, interactionHotkey: "F7" });
+    ctx.overlayInteractionHotkeyRegistered = null;
   });
   afterEach(() => {
     state.nativeWayland = false;
@@ -396,11 +397,20 @@ describe("overlay drag hint", () => {
     });
   });
 
-  it("points to the Settings switch on native Wayland, where the hotkey never fires", async () => {
+  it("points to Settings on native Wayland without a registered shortcut", async () => {
     state.nativeWayland = true;
     await expect(state.invokeHandlers.get(OVERLAY_GET_DRAG_HINT)!()).resolves.toMatchObject({
       hotkey: null,
       viaSettings: true,
+    });
+  });
+
+  it("names the compositor shortcut when one is registered on native Wayland", async () => {
+    state.nativeWayland = true;
+    ctx.overlayInteractionHotkeyRegistered = "F7";
+    await expect(state.invokeHandlers.get(OVERLAY_GET_DRAG_HINT)!()).resolves.toMatchObject({
+      hotkey: "F7",
+      viaSettings: false,
     });
   });
 });

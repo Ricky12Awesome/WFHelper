@@ -1,8 +1,12 @@
-import { globalShortcut } from "electron";
+import { app, globalShortcut } from "electron";
 
 import ctx from "./context";
 import { createKeyHookShortcut } from "../services/keyHookShortcut";
 import { withScope } from "../services/logger";
+import {
+  createHyprlandInteractionShortcut,
+  interactionToggleCommand,
+} from "../services/hyprlandInteractionShortcut";
 
 const log = withScope("hotkeyRegistry");
 
@@ -13,7 +17,24 @@ export const overlayHotkeyBackend =
       ? createKeyHookShortcut({ log })
       : globalShortcut;
 
+export const overlayInteractionHotkeyBackend = createHyprlandInteractionShortcut({
+  fallback: overlayHotkeyBackend,
+  log,
+  // Test/safe-mode launches must not register compositor shortcuts either.
+  platform: process.env.WFHELPER_DISABLE_KEYBOARD_HOOK === "1" ? "disabled" : process.platform,
+  userData: () => app.getPath("userData"),
+  command: () =>
+    interactionToggleCommand({
+      executable: process.execPath,
+      appPath: app.getAppPath(),
+      userData: app.getPath("userData"),
+      packaged: app.isPackaged,
+      appImage: process.env.APPIMAGE,
+    }),
+});
+
 export function disposeAppHotkeys(): void {
+  overlayInteractionHotkeyBackend.dispose();
   if ("dispose" in overlayHotkeyBackend) overlayHotkeyBackend.dispose();
 }
 

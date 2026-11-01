@@ -3,6 +3,8 @@ import { withScope } from "./logger";
 import { levenshteinDistance } from "./rewardScannerUtils";
 import { TAG_TO_WFM_URL_NAME } from "../config/shared/wfmRivenVocabulary";
 import { VARIANT_PREFIXES, VARIANT_SUFFIXES } from "../config/shared/weaponVariants";
+import { RIVEN_DISPOSITION, rivenClassForType, rivenStatForTag } from "./rivenStatModel";
+import { statTagToDisplayName } from "../config/shared/rivenStatDisplayNames";
 
 const log = withScope("rivenData");
 
@@ -21,7 +23,6 @@ interface UpgradeEntry {
 
 interface WeaponInfo {
   uniqueName: string;
-  omegaAttenuation: number;
   productCategory: string;
   holsterCategory: string;
   compatibilityTags: string[];
@@ -72,6 +73,11 @@ const STAT_NAME_TO_TAG: Record<string, string> = {
   "punch through": "WeaponPunctureDepthMod",
   "magazine capacity": "WeaponClipMaxMod",
   "ammo maximum": "WeaponAmmoMaxMod",
+  "ammo efficiency": "WeaponAmmoEfficiency",
+  "status damage": "WeaponStatusDamage",
+  viral: "WeaponViralDamageMod",
+  "weak point damage": "WeaponWeakpointDamage",
+  "weakpoint damage": "WeaponWeakpointDamage",
   "weapon recoil": "WeaponRecoilReductionMod",
   recoil: "WeaponRecoilReductionMod",
   zoom: "WeaponZoomFovMod",
@@ -243,7 +249,6 @@ function ensureBuilt(): void {
       ) {
         _weaponByNameLc.set(nameLc, {
           uniqueName,
-          omegaAttenuation: w.omegaAttenuation,
           productCategory,
           holsterCategory: w.holsterCategory || "",
           compatibilityTags: Array.isArray(w.compatibilityTags) ? w.compatibilityTags : [],
@@ -294,6 +299,30 @@ function ensureBuilt(): void {
         compat: mod.compat || "",
         entries,
       };
+      const cls = rivenClassForType(key);
+      if (cls) {
+        // Bundled exports can lag a balance patch. Numeric ranges come from the
+        // current model; actual game tags remain required for inventory decoding.
+        for (const tag of Object.values(STAT_NAME_TO_TAG)) {
+          const model = rivenStatForTag(tag);
+          const baseValue = model?.b[cls];
+          if (!model || baseValue === undefined) continue;
+          const existing = entries.find((entry) => entry.tag === tag);
+          const updated = {
+            tag,
+            baseValue,
+            canBeBuff: model.polarity !== "negOnly",
+            canBeCurse: model.polarity !== "posOnly",
+            displayName: statTagToDisplayName(tag, cls === "melee"),
+            prefix: model.prefix ?? "",
+            suffix: model.suffix ?? "",
+          };
+          if (existing) Object.assign(existing, updated);
+          else entries.push(updated);
+          // This index is shared across classes; melee labels are selected by callers.
+          _tagToDisplayName.set(tag, statTagToDisplayName(tag));
+        }
+      }
       _rivenModByKey.set(key, info);
       if (mod.compat) {
         _rivenModByCompat.set(mod.compat, info);
@@ -316,7 +345,7 @@ export function getWeaponNameByUniqueName(uniqueName: string): string | null {
 export function getWeaponDisposition(weaponName: string): number | null {
   ensureBuilt();
   const info = _weaponByNameLc.get(weaponName.toLowerCase());
-  return info ? info.omegaAttenuation : null;
+  return info ? RIVEN_DISPOSITION : null;
 }
 
 /** True when the card reads "Melee Damage" and "Attack Speed" for this weapon.
@@ -640,7 +669,7 @@ export function getFamilyVariants(
   for (const name of _weaponDisplayNames.values()) {
     if (getRivenFamilySlug(name) !== slug) continue;
     const info = _weaponByNameLc.get(name.toLowerCase());
-    if (info) out.push({ name, disposition: info.omegaAttenuation });
+    if (info) out.push({ name, disposition: RIVEN_DISPOSITION });
   }
   return out;
 }

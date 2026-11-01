@@ -10,7 +10,11 @@ import {
 } from "./ipcSecurity";
 import { overlayMessages, setOverlayLocale } from "./overlayI18n";
 import { createTray, destroyTray, isTrayActive } from "./trayIpc";
-import { disposeAppHotkeys, overlayHotkeyBackend } from "./hotkeyRegistry";
+import {
+  disposeAppHotkeys,
+  overlayHotkeyBackend,
+  overlayInteractionHotkeyBackend,
+} from "./hotkeyRegistry";
 import { createOverlaySettingsController } from "./overlay/settings";
 import { moveOverlayWindowBy } from "./overlay/windows";
 import { broadcastToRenderers } from "./popoutIpc";
@@ -287,6 +291,7 @@ const settingsController = createOverlaySettingsController({
   fs,
   writeFileAtomic: writeFileAtomicSync,
   globalShortcut: overlayHotkeyBackend,
+  interactionShortcut: overlayInteractionHotkeyBackend,
   ctx,
   settingsFile: OVERLAY_SETTINGS_FILE,
   defaults: OVERLAY_SETTINGS_DEFAULTS,

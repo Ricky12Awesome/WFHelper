@@ -116,6 +116,7 @@ export function createLayerPresentation(options: LayerPresentationOptions) {
   let originX = 0;
   let originY = 0;
   let interactive = false;
+  let takeFocus = false;
   // Bumped on every hide so a slow output lookup cannot map a surface for a
   // show the user already dismissed.
   let generation = 0;
@@ -340,7 +341,7 @@ export function createLayerPresentation(options: LayerPresentationOptions) {
         warnedCommit = false;
         setOrigin(currentOutput, geometry ? marginsFor(geometry, currentOutput) : null);
         applyWindowSize(surface.scale);
-        if (interactive) surface.setInteractive(true, forwardEvent);
+        if (interactive) surface.setInteractive(true, forwardEvent, takeFocus);
         log?.info?.(
           `[${label}] layer surface up on ${output ?? "compositor choice"} at ${surface.scale}x`,
         );
@@ -390,9 +391,10 @@ export function createLayerPresentation(options: LayerPresentationOptions) {
 
     /** Accept clicks, or let them fall through to the game. Sticky across shows,
      *  because the surface is remade on every show and starts click-through. */
-    setInteractive(next: boolean): void {
+    setInteractive(next: boolean, focus = next): void {
       interactive = next;
-      surface?.setInteractive(next, forwardEvent);
+      takeFocus = next && focus;
+      surface?.setInteractive(next, forwardEvent, takeFocus);
     },
   };
 }

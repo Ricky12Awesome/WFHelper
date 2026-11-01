@@ -6,7 +6,10 @@ import {
 } from "../../config/runtime/overlaySettings";
 import { createOverlaySettingsController } from "../../ipc/overlay/settings";
 
-function buildController() {
+function buildController(interactionShortcut?: {
+  register: (accelerator: string, callback: () => void) => boolean;
+  unregister: (accelerator: string) => void;
+}) {
   const ctx = {
     overlaySettings: { ...OVERLAY_SETTINGS_DEFAULTS, hotkey: "Control+Alt+R" },
     overlayHotkeyRegistered: null,
@@ -36,6 +39,7 @@ function buildController() {
         registerCallbacks.delete(accelerator);
       }),
     },
+    interactionShortcut,
     ctx,
     settingsFile: "D:/tmp/overlay-settings.json",
     defaults: {
@@ -558,6 +562,29 @@ describe("overlay settings controller", () => {
 
     registerCallbacks.get("Control+Alt+R")?.();
     expect(deps.onRelicRewardTrigger).toHaveBeenCalledWith("hotkey");
+  });
+
+  it("routes F7 through the compositor backend and releases it when the game closes", () => {
+    const interaction = { register: vi.fn(() => true), unregister: vi.fn() };
+    const { controller, deps, ctx } = buildController(interaction);
+    ctx.overlaySettings.interactionHotkeyEnabled = true;
+    ctx.overlaySettings.interactionHotkey = "F7";
+    controller.setHotkeysActive(true);
+    expect(interaction.register).toHaveBeenCalledWith("F7", expect.any(Function));
+    expect(ctx.overlayInteractionHotkeyRegistered).toBe("F7");
+    expect(deps.globalShortcut.register).not.toHaveBeenCalledWith("F7", expect.any(Function));
+    controller.setHotkeysActive(false);
+    expect(interaction.unregister).toHaveBeenCalledWith("F7");
+    expect(ctx.overlayInteractionHotkeyRegistered).toBeNull();
+  });
+
+  it("does not report a failed compositor registration as registered", () => {
+    const interaction = { register: vi.fn(() => false), unregister: vi.fn() };
+    const { controller, ctx } = buildController(interaction);
+    ctx.overlaySettings.interactionHotkeyEnabled = true;
+    ctx.overlaySettings.interactionHotkey = "F7";
+    controller.setHotkeysActive(true);
+    expect(ctx.overlayInteractionHotkeyRegistered).toBeNull();
   });
 
   it("registers the riven rescan hotkey and releases it with the others", () => {

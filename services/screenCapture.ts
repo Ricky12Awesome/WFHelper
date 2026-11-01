@@ -329,7 +329,10 @@ function locateMaximizedNiri(
 
 /** The game's rect in the frame, first confident answer wins; null leaves the
  *  frame to bar detection. */
-async function findLinuxGame(img: NativeImage, origin: LinuxFrameOrigin): Promise<Located | null> {
+async function findLinuxGame(
+  img: NativeImage,
+  origin: LinuxFrameOrigin,
+): Promise<Located | "unavailable" | null> {
   const size = img.getSize();
   lastSearchMiss = "";
   // The portal's source id proves nothing: niri named a whole-screen frame `window:1:0`.
@@ -340,11 +343,11 @@ async function findLinuxGame(img: NativeImage, origin: LinuxFrameOrigin): Promis
   const gameOutput = geometry.placed?.output ?? geometry.niri?.output ?? null;
   if (copied && gameOutput && gameOutput !== copied) {
     noteOnce(`the game is on ${gameOutput}, the frame shows ${copied}`);
-    return null;
+    return "unavailable";
   }
   if (geometry.niri && !geometry.niri.visible) {
     noteOnce("the game's niri workspace is not the one its monitor shows");
-    return null;
+    return "unavailable";
   }
 
   const gameSize = geometry.placed?.rect ?? geometry.niri?.windowSize ?? geometry.x11;
@@ -416,9 +419,11 @@ interface GameContentCrop {
 async function cropToLinuxGame(
   img: NativeImage,
   origin: LinuxFrameOrigin,
-): Promise<GameContentCrop> {
+): Promise<GameContentCrop | null> {
   try {
     const located = await findLinuxGame(img, origin);
+    // A known wrong output or hidden workspace is no OCR input at all.
+    if (located === "unavailable") return null;
     if (located) {
       noteLocate(located.source, located.detail);
       const size = img.getSize();
@@ -481,10 +486,14 @@ async function captureLinuxStream(): Promise<CaptureResult | null> {
     const frame = await captureLinuxStreamFrame();
     if (!frame) return null;
     const content = await cropToLinuxGame(frame.image, frame.origin);
+    if (!content) return null;
     return {
       image: content.image,
       sourceType: content.isGameWindow ? "window" : "screen",
-      sourceName: "getDisplayMedia stream",
+      sourceName:
+        frame.origin.kind === "screen-copy"
+          ? `Wayland screen copy (${frame.origin.output})`
+          : "getDisplayMedia stream",
       sourceId: "linux-stream",
       sourceDisplayId: "",
     };

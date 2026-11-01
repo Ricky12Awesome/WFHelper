@@ -25,6 +25,9 @@ export const hiddenTabs: Readable<Set<ViewName>> = derived(
   },
 );
 
+/** Keep secondary actions tucked away until the user needs them. */
+export const sidebarToolsExpanded = persistedBoolean("wf_sidebar_tools_expanded", false);
+
 const ORDER_KEY = "wf_sidebar_order";
 
 function loadSidebarOrder(): SidebarViewName[] {

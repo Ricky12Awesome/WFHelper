@@ -292,14 +292,14 @@ describe("linux focus and geometry precedence", () => {
     expect(isWarframeWindowFocusedLinux()).toBeNull();
   });
 
-  it("keeps exact X11 geometry ahead of the compositor rect", async () => {
+  it("keeps native Wayland geometry ahead of an X11 window titled Warframe", async () => {
     probe.nativeBounds = { ...NATIVE_BOUNDS };
     probe.waylandBounds = { ...COMPOSITOR_RECT, source: "foreign-toplevel" };
     const { waylandGameBounds } = await import("../../services/waylandGameWindow");
     const { getWarframeWindowBoundsLinux } = await import("../../services/warframeStatus");
 
-    expect(await getWarframeWindowBoundsLinux()).toEqual(NATIVE_BOUNDS);
-    expect(waylandGameBounds).not.toHaveBeenCalled();
+    expect(await getWarframeWindowBoundsLinux()).toEqual(COMPOSITOR_RECT);
+    expect(waylandGameBounds).toHaveBeenCalled();
   });
 
   it("takes the compositor rect when X11 has nothing", async () => {

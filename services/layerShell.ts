@@ -30,7 +30,7 @@ interface LayerShellAddon {
   isClosed(handle: number): boolean;
   scaleOf?(handle: number): number;
   sizeOf?(handle: number): { width: number; height: number } | null;
-  setInteractive?(handle: number, interactive: boolean): boolean;
+  setInteractive?(handle: number, interactive: boolean, focus?: boolean): boolean;
   pollEvents?(): RawPointerEvent[];
   outputRects?(): LayerOutputRect[];
   toplevels?(): WaylandToplevel[] | null;
@@ -210,8 +210,8 @@ export interface LayerSurface {
   /** Pixel size a frame must have, which is the logical size times the scale. */
   frameWidth: number;
   frameHeight: number;
-  /** Accept pointer input, or let clicks fall through to the game. */
-  setInteractive(interactive: boolean, onEvent?: EventSink): boolean;
+  /** Accept pointer input; explicit interaction can take focus to release the game's pointer lock. */
+  setInteractive(interactive: boolean, onEvent?: EventSink, focus?: boolean): boolean;
   /** Distance from each anchored edge, in logical pixels. A layer surface has no
    *  position of its own, so this is the only way to move one. */
   setMargin(top: number, right: number, bottom: number, left: number): boolean;
@@ -362,11 +362,11 @@ function makeSurface(
         reportDrop(addon);
       }
     },
-    setInteractive(interactive: boolean, onEvent?: EventSink): boolean {
+    setInteractive(interactive: boolean, onEvent?: EventSink, focus = false): boolean {
       if (destroyed) return false;
       let applied: boolean;
       try {
-        applied = addon.setInteractive?.(handle, interactive) === true;
+        applied = addon.setInteractive?.(handle, interactive, interactive && focus) === true;
       } catch (err) {
         warnOnce(`[LayerShell] setInteractive failed: ${(err as Error)?.message}`);
         return false;

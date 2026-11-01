@@ -47,6 +47,10 @@ type OverlaySettingsControllerOptions = {
     register: (accelerator: string, callback: () => void) => boolean;
     unregister: (accelerator: string) => void;
   };
+  interactionShortcut?: {
+    register: (accelerator: string, callback: () => void) => boolean;
+    unregister: (accelerator: string) => void;
+  };
   ctx: OverlayCtx;
   settingsFile: string;
   defaults: OverlaySettingsDict;
@@ -107,6 +111,7 @@ export function createOverlaySettingsController(options: OverlaySettingsControll
     onToggleOverlayInteractionMode,
     onRivenRescanTrigger,
   } = options;
+  const interactionShortcut = options.interactionShortcut ?? globalShortcut;
 
   function normalizeFissureAlerts(
     value: unknown,
@@ -348,7 +353,7 @@ export function createOverlaySettingsController(options: OverlaySettingsControll
   function unregisterOverlayInteractionHotkey(): void {
     if (!ctx.overlayInteractionHotkeyRegistered) return;
     try {
-      globalShortcut.unregister(ctx.overlayInteractionHotkeyRegistered);
+      interactionShortcut.unregister(ctx.overlayInteractionHotkeyRegistered);
     } catch (err) {
       log.warn("[OverlayInteractionHotkey] unregister failed:", normalizeErrorMessage(err));
     }
@@ -409,7 +414,7 @@ export function createOverlaySettingsController(options: OverlaySettingsControll
     if (!accelerator) return false;
 
     try {
-      const ok = globalShortcut.register(accelerator, () => {
+      const ok = interactionShortcut.register(accelerator, () => {
         onToggleOverlayInteractionMode("hotkey");
       });
       if (!ok) {

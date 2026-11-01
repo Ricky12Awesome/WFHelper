@@ -43,6 +43,14 @@ show desktop notifications while you play.
 > read English item names. WFHelper's own display language is separate and can
 > be changed in Settings.
 
+Riven roll grades use the post-Hotfix 44.1.3 stat model: all dispositions are 1.2,
+including weapon variants. Coefficients and grading are checked against
+[Tome-Wyrm's calculator](https://tome-wyrm.github.io/riven-calculator-site/),
+including spliced traits. Curses are scored by magnitude for splicing. Rounded
+values can span two letter grades; unknown or impossible values are left ungraded.
+The separate attribute recommendation grade shows `?` for spliced traits because
+the recommendation dataset does not cover them.
+
 ## Install
 
 Download the latest `WFHelper-<version>-Setup.exe` from
@@ -72,13 +80,16 @@ Good to know:
   Snap Steam.
 - **Inventory comes straight from the running game.** Nothing extra to
   download on Linux.
-- **Wayland picks its own backend.** The app puts itself on XWayland so the overlays
-  can sit on top of the game. Compositors without a real XWayland (niri) show
-  no window at all, so WFHelper notices, restarts on native Wayland and
-  remembers it. Settings lets you pick the backend by hand. Wayland gives no
-  app a way to force itself above another, so overlays are best-effort there.
-- **Native Wayland has no global hotkeys.** The overlay unlock key never fires
-  there, so use "Switch to interactive overlays" in Settings > Overlays, or bind
+- **Wayland overlays use layer-shell where available.** This works even when the
+  main app uses XWayland. Interactive mode takes focus to release the game's mouse
+  grab; switching back restores click-through. On compositors without layer-shell,
+  such as GNOME, overlays use ordinary windows. Settings lets you pick the main
+  app's backend by hand.
+- **Hyprland registers the overlay interaction key with the compositor.** F7
+  (or your configured key) switches between interactive and click-through mode,
+  including native Wayland games. The temporary binding is released when the
+  game closes; existing compositor bindings are not replaced. On other native
+  Wayland desktops use "Switch to interactive overlays" in Settings > Overlays, or bind
   `--toggle-overlay-interaction` to a key in your compositor. In niri:
   `Mod+I { spawn "/path/to/WFHelper.AppImage" "--toggle-overlay-interaction"; }`
 - **SteamOS is untested.** Desktop mode may work like any other distro. Game

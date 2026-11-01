@@ -18,6 +18,7 @@ const state = vi.hoisted(() => ({
   rects: [] as unknown,
   niriFocus: null as boolean | null,
   niriBounds: null as unknown,
+  compositorBounds: null as unknown,
 }));
 
 vi.mock("../../services/layerShell", () => ({
@@ -28,6 +29,11 @@ vi.mock("../../services/layerShell", () => ({
 vi.mock("../../services/niriIpc", () => ({
   niriGameFocusSync: vi.fn(() => state.niriFocus),
   niriWindowBounds: vi.fn(() => Promise.resolve(state.niriBounds)),
+}));
+
+vi.mock("../../services/waylandCompositor", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../services/waylandCompositor")>()),
+  compositorGameRect: vi.fn(async () => state.compositorBounds),
 }));
 
 const realWaylandDisplay = process.env.WAYLAND_DISPLAY;
@@ -59,6 +65,7 @@ describe("wayland game window", () => {
     state.rects = [];
     state.niriFocus = null;
     state.niriBounds = null;
+    state.compositorBounds = null;
   });
 
   afterEach(() => {
@@ -90,6 +97,11 @@ describe("wayland game window", () => {
       toplevel({ activated: false }),
     ];
     expect(waylandGameFocus()).toBe(false);
+  });
+
+  it("ignores a weak title-only match for focus", () => {
+    state.toplevels = [toplevel({ title: "Warframe Wiki", appId: "firefox", activated: true })];
+    expect(waylandGameFocus()).toBeNull();
   });
 
   it("ranks the game's app id over a focused tab titled exactly like it", async () => {
@@ -146,6 +158,24 @@ describe("wayland game window", () => {
       width: 1900,
       height: 1040,
       source: "niri",
+    });
+  });
+
+  it("prefers native compositor bounds for a windowed game", async () => {
+    state.toplevels = [toplevel({ fullscreen: false })];
+    state.rects = [rect()];
+    state.niriBounds = { x: 1935, y: 26, width: 1900, height: 1040 };
+    state.compositorBounds = {
+      rect: { x: 1980, y: 50, width: 1500, height: 900 },
+      output: "DP-2",
+    };
+
+    expect(await waylandGameBounds()).toEqual({
+      x: 1980,
+      y: 50,
+      width: 1500,
+      height: 900,
+      source: "compositor",
     });
   });
 

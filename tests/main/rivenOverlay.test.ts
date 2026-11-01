@@ -430,6 +430,89 @@ describe("parseRivenStats", () => {
     expect(result[0].value).toBe(48.3);
   });
 
+  it.each(["Ammo Efficiency", "Ammo\nEfficiency", "Ammo\nEficiency"])(
+    "reads the trait-locked Kuva Bramma card with %s",
+    (label) => {
+      const diagnostics = { droppedLines: [] as string[] };
+      const stats = parseRivenStats(
+        `Kuva Bramma\nParcicron\n+223.8% Critical Chance\n6 +73.3% ${label}\n+54.1% Weapon Recoil`,
+        diagnostics,
+      );
+      expect(stats).toEqual([
+        expect.objectContaining({ name: "Critical Chance", value: 223.8, positive: true }),
+        expect.objectContaining({ name: "Ammo Efficiency", value: 73.3, positive: true }),
+        expect.objectContaining({
+          name: "Weapon Recoil",
+          value: 54.1,
+          positive: false,
+          displayPositive: true,
+        }),
+      ]);
+      expect(diagnostics.droppedLines).toEqual([]);
+    },
+  );
+
+  it.each(["Ammo Maximum", "Heavy Attack Efficiency", "Channeling Efficiency"])(
+    "keeps %s distinct from Ammo Efficiency",
+    (name) => {
+      expect(parseRivenStats(`+73.3% ${name}`)).toEqual([
+        expect.objectContaining({ name, value: 73.3, positive: true }),
+      ]);
+    },
+  );
+
+  it.each([
+    "Ammo Efficiency",
+    "Heavy Attack Wind Up Speed",
+    "Melee Damage On Heavy Attack",
+    "Parry Angle",
+    "Reload While Holstered",
+    "Slam Attack Damage",
+    "Status Damage",
+    "Weak Point Damage",
+    "Weak Point Critical Chance",
+    "Blast",
+    "Corrosive",
+    "Gas",
+    "Magnetic",
+    "Radiation",
+    "Viral",
+    "Damage to Orokin",
+    "Damage to Scaldra",
+    "Damage to Techrot",
+  ])("keeps the spliced trait %s distinct from ordinary traits", (name) => {
+    expect(parseRivenStats(`+50.0% ${name}`)).toEqual([
+      expect.objectContaining({ name, value: 50, positive: true }),
+    ]);
+  });
+
+  it.each([
+    "Weakpoint Critical Chance",
+    "Weak Point\nCritical Chance",
+    "Weak\nPoint\nCritical Chance",
+  ])("reads the wrapped or alternate spelling %s as a single trait", (name) => {
+    expect(parseRivenStats(`+270.0% ${name}`)).toEqual([
+      expect.objectContaining({ name: "Weak Point Critical Chance", value: 270, positive: true }),
+    ]);
+  });
+
+  it.each(["Weak Point Damage", "Weak Point\nDamage", "Weak\nPoint\nDamage"])(
+    "reads the locked Convectrix stat when OCR wraps %s",
+    (label) => {
+      const diagnostics = { droppedLines: [] as string[] };
+      const stats = parseRivenStats(
+        `Convectrix Enican\n+177.3% Multishot\n9 +338.4% ${label}\n-27.1% Zoom\nMR14034`,
+        diagnostics,
+      );
+      expect(stats).toEqual([
+        expect.objectContaining({ name: "Multishot", value: 177.3, positive: true }),
+        expect.objectContaining({ name: "Weak Point Damage", value: 338.4, positive: true }),
+        expect.objectContaining({ name: "Zoom", value: 27.1, positive: false }),
+      ]);
+      expect(diagnostics.droppedLines).toEqual([]);
+    },
+  );
+
   it("recognises a negative stat with em-dash and value", () => {
     const result = parseRivenStats("\u201394.5% Recoil");
     expect(result).toHaveLength(1);

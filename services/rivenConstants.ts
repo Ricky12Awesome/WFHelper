@@ -24,5 +24,5 @@ export const NON_PERCENTAGE_TAGS = new Set([
  *  has to subtract the 1 before it sees the roll. */
 export function isMultiplierTag(tag: string): boolean {
   if (!NON_PERCENTAGE_TAGS.has(tag)) return false;
-  return tag.includes("FactionDamage") || tag === "WeaponMeleeComboInitialBonusMod";
+  return tag.includes("FactionDamage");
 }

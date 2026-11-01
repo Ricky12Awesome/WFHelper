@@ -63,6 +63,7 @@ function gradeClass(grade) {
   if (!grade || grade === "?") return "grade-unknown";
   // "A+" -> "grade-Ap", "A-" -> "grade-Am", "B+" -> "grade-Bp", etc.
   const sanitised = String(grade)
+    .split(" / ")[0]
     .replace("+", "p")
     .replace("-", "m")
     .replace(/[^A-Za-z]/g, "");
@@ -78,9 +79,8 @@ function buildGradeBadge(grade, large) {
 }
 
 /** Map roll float (0-1) to a colour for the progress bar. */
-function rollBarColor(rollFloat, isCurse) {
-  // For curses, lower float = better (stat is less penalising)
-  var pct = isCurse ? 1 - rollFloat : rollFloat;
+function rollBarColor(rollFloat) {
+  var pct = rollFloat;
   if (pct >= 0.85) return "var(--ok)";
   if (pct >= 0.6) return "var(--accent)";
   if (pct >= 0.35) return "var(--warn)";
@@ -137,7 +137,7 @@ function buildStatRow(stat) {
     barFill.className = "roll-bar-fill";
     var pct = Math.round(Math.max(0, Math.min(1, stat.rollFloat)) * 100);
     barFill.style.width = pct + "%";
-    barFill.style.setProperty("--roll-grade-color", rollBarColor(stat.rollFloat, !stat.positive));
+    barFill.style.setProperty("--roll-grade-color", rollBarColor(stat.rollFloat));
     barWrap.appendChild(barFill);
     row.appendChild(barWrap);
   }
@@ -756,7 +756,7 @@ function renderLayoutPreview(state) {
     { name: "Critical Chance", value: 153.4, positive: true, grade: "A", rollFloat: 0.82 },
     { name: "Critical Damage", value: 120.6, positive: true, grade: "S", rollFloat: 0.98 },
     { name: "Multishot", value: 84.3, positive: true, grade: "B+", rollFloat: 0.64 },
-    { name: "Zoom", value: 40.2, positive: false, grade: "A-", rollFloat: 0.21 },
+    { name: "Zoom", value: 40.2, positive: false, grade: "A-", rollFloat: 0.71 },
   ];
   renderStats(state.previewVariant === "unrolled" ? [stats[0], stats[1], stats[3]] : stats);
   renderOverallGrade("Great");

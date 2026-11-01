@@ -40,6 +40,21 @@ describe("parseWarframeWindowBounds", () => {
     });
   });
 
+  it("ignores a browser window whose title only mentions Warframe", () => {
+    const browser = `     0x1400003 "Warframe Wiki - Mozilla Firefox": ("firefox" "Firefox")  2560x1440+0+0  +0+0`;
+    expect(parseWarframeWindowBounds(browser)).toBeNull();
+  });
+
+  it("matches the Steam app id in the window class", () => {
+    const steam = `     0x1400003 "Game": ("steam_app_230410" "Steam")  1920x1080+0+0  +0+0`;
+    expect(parseWarframeWindowBounds(steam)).toEqual({
+      x: 0,
+      y: 0,
+      width: 1920,
+      height: 1080,
+    });
+  });
+
   it("survives empty or unrelated output", () => {
     expect(parseWarframeWindowBounds("")).toBeNull();
     expect(parseWarframeWindowBounds("xwininfo: error: unable to open display")).toBeNull();

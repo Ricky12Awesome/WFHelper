@@ -115,6 +115,8 @@ test("the dev test button records a notification", async () => {
 
   // Dev-only sidebar button; the sandbox runs unpackaged, so it appears once the
   // runtime info resolves.
+  const tools = page.locator("#sidebar [data-sidebar-tools-toggle]");
+  if ((await tools.getAttribute("aria-expanded")) !== "true") await tools.click();
   await page.locator("#sidebar [data-test-notification]").click();
 
   const bell = page.locator("[data-notification-open]");
