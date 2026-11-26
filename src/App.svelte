@@ -39,6 +39,7 @@
   import { initRendererEvents } from "./lib/rendererEvents.js";
   import { invoke } from "./lib/ipc.js";
   import { log } from "./lib/log.js";
+  import { isModuleFetchError, reloadFailedView, takeReloadView } from "./lib/lazyViewRecovery.js";
   import { tr } from "./lib/i18n.js";
   import type { PopoutView } from "../config/shared/popoutTypes.js";
   import type { ViewName } from "./types/views.js";
@@ -73,6 +74,7 @@
   let lazyViewComponent: LazyViewComponent | null = null;
   let lazyViewLoading = false;
   let lazyViewError = "";
+  $: lazyViewNeedsReload = isModuleFetchError(lazyViewError);
   let activeLazyView: LazyViewName | null = null;
   let lastRequestedLazyView: LazyViewName | null = null;
   let lazyRequestToken = 0;
@@ -88,6 +90,7 @@
   $: shellAccentStyle = viewAccentVars(effectiveViewAccent($themeSettings, $currentView));
 
   onMount(() => {
+    const reloadView = takeReloadView();
     const unsubscribeViewChange = currentView.subscribe((view) => {
       handleViewChange(view);
     });
@@ -107,6 +110,7 @@
       // non-"1" leftover value is treated consistently.
       currentView.set("setup");
     } else {
+      if (reloadView) currentView.set(reloadView);
       void reopenSetupWhenInventoryIsUnavailable();
       void restoreWorkspaceOnLaunch();
     }
@@ -181,6 +185,10 @@
 
   function retryLazyViewLoad(): void {
     if (!activeLazyView) return;
+    if (lazyViewNeedsReload) {
+      reloadFailedView(activeLazyView);
+      return;
+    }
     void loadLazyView(activeLazyView);
   }
 
@@ -405,7 +413,8 @@
                   <p class="text-sm text-text-muted">{lazyViewError}</p>
                   <button
                     class="cursor-pointer rounded border border-border bg-bg-soft px-3 py-1 text-sm text-text-secondary transition-[border-color,color] duration-150 hover:border-border-strong hover:text-text-primary"
-                    on:click={retryLazyViewLoad}>{$tr("common.retry")}</button
+                    on:click={retryLazyViewLoad}
+                    >{$tr(lazyViewNeedsReload ? "common.reloadApp" : "common.retry")}</button
                   >
                 </div>
               </section>

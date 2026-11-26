@@ -60,7 +60,9 @@ export default defineConfig({
 
   build: {
     outDir: path.resolve(__dirname, "renderer/dist"),
-    emptyOutDir: true,
+    // A running Electron window can still import chunks from its loaded build.
+    // Packaging explicitly passes --emptyOutDir to produce a clean release.
+    emptyOutDir: false,
     sourcemap: process.env.WFHELPER_SOURCE_MAPS === "1" ? "hidden" : false,
     chunkSizeWarningLimit: CHUNK_SIZE_WARNING_LIMIT_KB,
     rollupOptions: {
